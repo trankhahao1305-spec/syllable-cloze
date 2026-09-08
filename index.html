@@ -1,0 +1,3751 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SyllableCloze - Học Từ Vựng Tiếng Anh Chuẩn Âm Tiết & FSRS</title>
+  <meta name="description" content="Học từ vựng tiếng Anh theo phương pháp đục lỗ âm tiết chuẩn từ điển, lặp lại ngắt quãng FSRS chuẩn Anki và viết tay cảm ứng.">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* CSS Thuần Siêu Nhẹ & Tốc Độ Tức Thì (Instant Load - 0s delay) */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      overscroll-behavior-y: none;
+    }
+    @supports (padding-top: env(safe-area-inset-top)) {
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+    }
+
+    /* Layout Container */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: #f8fafc;
+      position: relative;
+    }
+
+    /* Minimal Header (TASK-UI-DRAWER-NAV) */
+    header.app-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Menu Button Trigger (Logo + Name + Hamburger Icon) */
+    .btn-menu-trigger {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px 10px 6px 6px;
+      border-radius: 12px;
+      margin-left: -6px;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+    .btn-menu-trigger:hover {
+      background-color: #f1f5f9;
+    }
+    .btn-menu-trigger:active {
+      transform: scale(0.97);
+    }
+    .logo-badge {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: 10px;
+      color: white;
+      font-weight: 900;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+    }
+    .brand-text {
+      font-weight: 700;
+      font-size: 14px;
+      color: #1e293b;
+      letter-spacing: -0.2px;
+    }
+    .menu-icon {
+      color: #64748b;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Header Right Status Pill */
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .status-due {
+      background: #fef2f2;
+      color: #ef4444;
+      border: 1px solid #fee2e2;
+    }
+    .status-done {
+      background: #ecfdf5;
+      color: #10b981;
+      border: 1px solid #d1fae5;
+    }
+    .dot-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ========================================================
+       GEMINI-STYLE SIDEBAR DRAWER (SLIDE-OVER FROM LEFT)
+       ======================================================== */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-in-out;
+    }
+    .drawer-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sidebar-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 288px; /* w-72 */
+      max-width: 85vw;
+      background: #ffffff;
+      z-index: 50;
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      touch-action: pan-y;
+    }
+    @media (min-width: 640px) {
+      .sidebar-drawer {
+        width: 320px; /* w-80 */
+      }
+    }
+    .sidebar-drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      height: 56px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fafafa;
+    }
+    .btn-close-drawer {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #94a3b8;
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-close-drawer:hover {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .drawer-primary-action {
+      padding: 12px 14px;
+    }
+    .btn-new-words {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #eef2ff;
+      color: #4f46e5;
+      font-weight: 700;
+      font-size: 13px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.08);
+      transition: all 0.15s ease;
+    }
+    .btn-new-words:hover {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+    .btn-new-words:active {
+      transform: scale(0.98);
+    }
+
+    .drawer-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .nav-item:hover {
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    .nav-item.active {
+      background: #f1f5f9;
+      color: #4f46e5;
+      font-weight: 700;
+    }
+    .nav-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-item-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 99px;
+      background: #ef4444;
+      color: white;
+    }
+
+    .drawer-settings-box {
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #f1f5f9;
+      font-size: 11px;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+    .voice-toggle-btn {
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #475569;
+    }
+    .voice-toggle-btn.active {
+      background: #4f46e5;
+      color: white;
+      border-color: #4f46e5;
+    }
+
+    .drawer-footer {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .footer-action-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .footer-action-btn:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    /* ========================================================
+       CONTENT VIEWS
+       ======================================================== */
+    .view-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 10px 12px;
+      position: relative;
+    }
+
+    /* Study View Layout */
+    .card-top-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      padding: 0 4px;
+    }
+    .tag-index {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .card-face-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    /* Tap-to-Flip Study Card (2-Sided) */
+    .study-card {
+      flex: 0 0 auto;
+      min-height: 220px;
+      max-height: 38vh;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+      overflow: hidden;
+    }
+    .study-card:hover {
+      border-color: #c7d2fe;
+    }
+    .study-card:active {
+      transform: scale(0.995);
+    }
+
+    .card-flip-hint {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+
+    .card-face {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    /* Badge Loại Từ */
+    .card-type-badge {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      padding: 2px 10px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: inline-block;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    /* 2D Cartoon Vector Image */
+    .card-img-wrapper {
+      width: 100%;
+      max-width: 160px;
+      height: 80px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+    }
+    .card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 4px;
+      transition: opacity 0.2s;
+    }
+    .card-img-fallback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Chunks Display */
+    .chunks-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin: 4px 0 6px 0;
+    }
+    .chunk-pill {
+      font-size: 17px;
+      font-weight: 800;
+      background: #f1f5f9;
+      color: #1e293b;
+      padding: 3px 9px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      letter-spacing: 0.3px;
+    }
+    .chunk-hidden {
+      min-width: 48px;
+      height: 34px;
+      border: 2px dashed #6366f1;
+      background: #eef2ff;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #4f46e5;
+      animation: pulse 1.8s infinite;
+    }
+    .chunk-revealed {
+      min-width: 48px;
+      height: 34px;
+      border: 2.5px solid #16a34a;
+      background: #dcfce7;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #15803d;
+      box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+      animation: chunkPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes chunkPop {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .front-meaning-revealed {
+      font-size: 12px;
+      font-weight: 700;
+      color: #15803d;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 3px 10px;
+      margin-top: 4px;
+      display: inline-block;
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    /* IPA and Speaker Pill */
+    .card-ipa-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .word-ipa {
+      font-family: monospace;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .btn-audio-pill {
+      background: #f1f5f9;
+      border: none;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #4f46e5;
+      transition: all 0.15s;
+    }
+    .btn-audio-pill:hover {
+      background: #e0e7ff;
+    }
+    .btn-audio-pill:active {
+      transform: scale(0.9);
+      background: #c7d2fe;
+    }
+    .btn-audio-pill.is-speaking {
+      background: #4f46e5;
+      color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.35);
+      animation: audioWavePulse 0.55s infinite alternate ease-in-out;
+    }
+    @keyframes audioWavePulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3); }
+      100% { transform: scale(1.2); box-shadow: 0 0 0 7px rgba(99, 102, 241, 0.12); }
+    }
+
+    /* ==========================================
+       Lean Oxford Back Face Styling (v0.7.1)
+       ========================================== */
+    .back-lean-container {
+      width: 100%;
+      max-height: 255px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      text-align: left;
+      padding: 2px 2px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .back-lean-container::-webkit-scrollbar {
+      display: none;
+    }
+    .back-oxford-box {
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 12px;
+      padding: 8px 11px;
+      line-height: 1.45;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .back-oxford-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #4f46e5;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .back-oxford-text {
+      font-size: 12px;
+      color: #334155;
+      font-style: italic;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+    .back-collocations-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .back-collocations-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      padding-left: 2px;
+    }
+    .back-collocations-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .collocation-chip {
+      font-size: 11px;
+      font-weight: 600;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #78350f;
+      padding: 3px 8px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+    .back-example-box {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 12px;
+      padding: 8px 11px;
+      text-align: left;
+    }
+    .back-example-en {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #1e293b;
+      line-height: 1.4;
+    }
+    .back-example-vi {
+      font-size: 10.5px;
+      color: #64748b;
+      line-height: 1.4;
+      margin-top: 2px;
+      padding-left: 8px;
+    }
+
+    /* Scratchpad Canvas Container */
+    .scratchpad-container {
+      flex: 1;
+      min-height: 0;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 8px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.02);
+      background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+      background-size: 22px 22px;
+    }
+    canvas#scratchpadCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .scratchpad-hint {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.7;
+    }
+    .btn-clear-canvas {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      transition: all 0.15s;
+      z-index: 10;
+    }
+    .btn-clear-canvas:hover {
+      color: #1e293b;
+      background: white;
+    }
+    .btn-clear-canvas:active {
+      transform: scale(0.94);
+    }
+
+    /* Action Zone: Nút Hiện Đáp Án / 4 Nút FSRS */
+    .action-zone {
+      height: 58px;
+      flex: 0 0 58px;
+      display: flex;
+      align-items: center;
+    }
+    .btn-reveal-answer {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: var(--radius-md);
+      background: #4f46e5;
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28);
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-reveal-answer:hover {
+      background: #4338ca;
+    }
+    .btn-reveal-answer:active {
+      transform: scale(0.98);
+      background: #3730a3;
+    }
+
+    /* FSRS 4 Buttons Grid */
+    .fsrs-buttons {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    .btn-fsrs {
+      border: none;
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 0.1s;
+      padding: 4px 2px;
+    }
+    .btn-fsrs:active {
+      transform: scale(0.96);
+    }
+    .btn-fsrs-title {
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .btn-fsrs-sub {
+      font-size: 10px;
+      font-weight: 500;
+      margin-top: 1px;
+    }
+    .btn-fsrs-again {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+    }
+    .btn-fsrs-hard {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #b45309;
+    }
+    .btn-fsrs-good {
+      background: #0284c7;
+      color: white;
+      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+    }
+    .btn-fsrs-easy {
+      background: #059669;
+      color: white;
+      box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+    }
+
+    /* Study Folder Banner Indicator */
+    .study-folder-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 10px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #4338ca;
+    }
+    .btn-clear-folder-filter {
+      background: transparent;
+      border: none;
+      color: #6366f1;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .btn-clear-folder-filter:hover {
+      text-decoration: underline;
+    }
+
+    /* Folders View (Option 1 Hybrid Mode) */
+    .folders-view {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      gap: 12px;
+      flex-direction: column;
+    }
+    .folder-hero {
+      background: linear-gradient(135deg, #4338ca, #312e81);
+      color: white;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 8px 24px rgba(67, 56, 202, 0.22);
+      position: relative;
+      overflow: hidden;
+    }
+    .folder-hero-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .folder-hero-title {
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 2px;
+      line-height: 1.3;
+    }
+    .folder-hero-desc {
+      font-size: 11px;
+      color: #c7d2fe;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .btn-hero-study {
+      width: 100%;
+      background: white;
+      color: #4338ca;
+      font-weight: 800;
+      font-size: 13px;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 11px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: transform 0.1s, background-color 0.15s;
+    }
+    .btn-hero-study:active {
+      transform: scale(0.98);
+      background: #f8fafc;
+    }
+    .folder-card {
+      background: white;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .folder-card:hover {
+      border-color: #c7d2fe;
+    }
+    .folder-card:active {
+      transform: scale(0.99);
+    }
+    .folder-badge-due {
+      font-size: 11px;
+      font-weight: 800;
+      color: #dc2626;
+      background: #fef2f2;
+      border: 1px solid #fee2e2;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .folder-badge-done {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .folder-quick-create-box {
+      background: white;
+      border: 2px solid #c7d2fe;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+    }
+
+    /* Library / Deck View */
+    .library-view {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      gap: 12px;
+      flex-direction: column;
+    }
+    .stats-card {
+      background: linear-gradient(135deg, #1e1b4b, #0f172a);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      color: white;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+      text-align: center;
+    }
+    .stats-item {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+    }
+    .stats-num {
+      font-size: 20px;
+      font-weight: 900;
+    }
+    .stats-label {
+      font-size: 10px;
+      color: #94a3b8;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      background: white;
+      outline: none;
+    }
+    .search-box:focus {
+      border-color: var(--primary);
+    }
+
+    .word-item-card {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .word-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .word-item-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .btn-delete:hover {
+      color: var(--danger);
+    }
+
+    /* Modal AI Sync */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 60;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .modal-dialog {
+      background: white;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fafafa;
+    }
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .prompt-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 10px;
+      border-radius: 12px;
+      font-family: monospace;
+      font-size: 11px;
+      max-height: 110px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .btn-copy {
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .btn-copy:active {
+      transform: scale(0.98);
+    }
+    textarea.json-input {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-family: monospace;
+      font-size: 11px;
+      outline: none;
+    }
+    textarea.json-input:focus {
+      border-color: var(--primary);
+    }
+    .modal-footer {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      background: #fafafa;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      display: none;
+      z-index: 100;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.65; transform: scale(0.98); }
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notifier -->
+  <div id="toast" class="toast">Thông báo</div>
+
+  <div class="app-container">
+    <!-- Minimal Header (TASK-UI-DRAWER-NAV) -->
+    <header class="app-header">
+      <!-- Bên trái: Nút Logo + Menu Hamburger -->
+      <button class="btn-menu-trigger" onclick="openDrawer()" aria-label="Mở Menu Điều Hướng">
+        <div class="logo-badge">SC</div>
+        <span class="brand-text">SyllableCloze</span>
+        <div class="menu-icon">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+          </svg>
+        </div>
+      </button>
+
+      <!-- Bên phải: Trạng thái tối giản -->
+      <div id="headerStatus" class="header-status status-done">
+        <span class="dot-pulse"></span>
+        <span id="headerStatusText">Đã xong</span>
+      </div>
+    </header>
+
+    <!-- GEMINI-STYLE SIDEBAR DRAWER (Slide-over) -->
+    <!-- Backdrop: z-40 -->
+    <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
+
+    <!-- Aside Drawer: z-50 -->
+    <aside id="sidebarDrawer" class="sidebar-drawer">
+      <!-- 1. Header Drawer -->
+      <div class="drawer-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="logo-badge" style="width:28px; height:28px; font-size:11px;">SC</div>
+          <div>
+            <div style="font-size:13px; font-weight:800; color:#1e293b;">SyllableCloze</div>
+            <div style="font-size:9px; color:#94a3b8; font-weight:600;">FSRS Spaced Repetition</div>
+          </div>
+        </div>
+        <button class="btn-close-drawer" onclick="closeDrawer()" aria-label="Đóng menu">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="18" x2="18" y2="6"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 2. Primary Action Button (Gemini-like New Chat Pill) -->
+      <div class="drawer-primary-action">
+        <button class="btn-new-words" onclick="handleDrawerNav(() => openAISyncModal())">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          <span>Thêm từ mới (AI Sync)</span>
+        </button>
+      </div>
+
+      <!-- 3. Danh Sách Điều Hướng Chính -->
+      <nav class="drawer-nav">
+        <!-- Sàn Ôn Tập -->
+        <button id="navStudy" class="nav-item active" onclick="handleDrawerNav(() => switchTab('study'))">
+          <div class="nav-item-left">
+            <svg width="18" height="18" fill="none" stroke="#4f46e5" viewBox="0 0 24 24" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>🎴 Sàn ôn tập</span>
+          </div>
+          <span id="navDueBadge" class="nav-item-badge" style="display:none;">0</span>
+        </button>
+
+        <!-- Thư Mục Chủ Đề -->
+        <button id="navFolders" class="nav-item" onclick="handleDrawerNav(() => switchTab('folders'))">
+          <div class="nav-item-left">
+            <svg width="18" height="18" fill="none" stroke="#6366f1" viewBox="0 0 24 24" stroke-width="2">
+              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+            </svg>
+            <span>📁 Thư mục chủ đề</span>
+          </div>
+          <span id="navTotalFoldersCount" style="font-size:11px; color:#94a3b8;">1 thư mục</span>
+        </button>
+
+        <!-- Kho Từ Vựng -->
+        <button id="navLibrary" class="nav-item" onclick="handleDrawerNav(() => switchTab('library'))">
+          <div class="nav-item-left">
+            <svg width="18" height="18" fill="none" stroke="#10b981" viewBox="0 0 24 24" stroke-width="2">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+              <path d="M6 6h10"></path><path d="M6 10h10"></path>
+            </svg>
+            <span>📚 Kho từ vựng</span>
+          </div>
+          <span id="navTotalWordsCount" style="font-size:11px; color:#94a3b8;">5 từ</span>
+        </button>
+
+        <!-- Thống Kê FSRS -->
+        <button id="navStats" class="nav-item" onclick="handleDrawerNav(() => switchTab('library'))">
+          <div class="nav-item-left">
+            <svg width="18" height="18" fill="none" stroke="#f59e0b" viewBox="0 0 24 24" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>📊 Thống kê FSRS</span>
+          </div>
+          <span id="navTotalCardsCount" style="font-size:11px; color:#94a3b8;">21 thẻ</span>
+        </button>
+
+        <!-- Cài Đặt Phát Âm (Settings) -->
+        <div class="drawer-settings-box">
+          <div style="font-weight:700; color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;">⚙️ Cài đặt giọng đọc</div>
+          <div class="settings-row">
+            <span style="color:#334155;">Giọng phát âm:</span>
+            <div style="display:flex; gap:4px;">
+              <button id="btnVoiceUS" class="voice-toggle-btn active" onclick="setVoiceLanguage('en-US')">Mỹ (US)</button>
+              <button id="btnVoiceUK" class="voice-toggle-btn" onclick="setVoiceLanguage('en-GB')">Anh (UK)</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span style="color:#334155;">Tốc độ đọc:</span>
+            <div style="display:flex; gap:4px;">
+              <button id="btnRateNormal" class="voice-toggle-btn active" onclick="setSpeechRate(0.88)">Chuẩn</button>
+              <button id="btnRateSlow" class="voice-toggle-btn" onclick="setSpeechRate(0.75)">Chậm</button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- 4. Chân Trang Drawer (Footer Menu) -->
+      <div class="drawer-footer">
+        <!-- Khối Thông Tin Tài Khoản Khi Đã Đăng Nhập -->
+        <div id="drawerUserBox" style="display:none; padding:10px; background:#f8fafc; border-radius:14px; border:1px solid #e2e8f0; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+              <div id="drawerUserAvatar" style="width:28px; height:28px; border-radius:50%; background:#4f46e5; color:white; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">U</div>
+              <div style="min-width:0;">
+                <div id="drawerUserEmail" style="font-size:11px; font-weight:700; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;">user@example.com</div>
+                <div style="font-size:10px; color:#10b981; font-weight:600; display:flex; align-items:center; gap:3px;">
+                  <span style="width:5px; height:5px; border-radius:50%; background:#10b981;"></span>
+                  <span>Đã liên kết Cloud</span>
+                </div>
+              </div>
+            </div>
+            <button onclick="handleSignOut()" title="Đăng xuất" style="border:none; background:none; cursor:pointer; color:#94a3b8; padding:4px; border-radius:6px;">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Nút Mở Modal Đăng Nhập (khi là Guest) -->
+        <button id="btnOpenAuth" class="footer-action-btn" onclick="handleDrawerNav(() => openAuthModal())" style="background:#eef2ff; color:#4338ca; font-weight:700; border:1px solid #c7d2fe; margin-bottom:6px;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+          <span>☁️ Đăng nhập / Đồng bộ Cloud</span>
+        </button>
+
+        <button class="footer-action-btn" onclick="handleDrawerNav(() => exportBackup())">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="20" x2="12" y2="3"></line>
+          </svg>
+          <span>💾 Xuất sao lưu (JSON)</span>
+        </button>
+        <label class="footer-action-btn" style="cursor:pointer;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span>📥 Nhập tệp sao lưu</span>
+          <input type="file" accept=".json" onchange="importBackup(event)" style="display:none;" />
+        </label>
+      </div>
+    </aside>
+
+    <!-- Study View -->
+    <div id="studyView" class="view-content">
+      <!-- Banner Thư Mục (Khi đang học riêng theo Thư mục) -->
+      <div id="studyFolderBanner" class="study-folder-banner" style="display:none;">
+        <span id="studyFolderName">📁 Thư mục</span>
+        <button class="btn-clear-folder-filter" onclick="loadStudySession(null)">Ôn tất cả ✕</button>
+      </div>
+
+      <!-- Card Top Meta (Thứ tự thẻ & Mặt hiển thị) -->
+      <div class="card-top-meta">
+        <span id="cardCounter" class="tag-index">Thẻ 1 / 1</span>
+        <span id="cardFaceStatus" class="card-face-badge">Mặt trước (Gợi nhớ)</span>
+      </div>
+
+      <!-- Thẻ Đục Lỗ 2 Mặt Thông Minh (Tap-to-Flip) -->
+      <div id="studyCard" class="study-card" onclick="flipCard()" role="button" tabindex="0" aria-label="Chạm vào thẻ để lật">
+        <!-- Flip Hint Corner Indicator -->
+        <div class="card-flip-hint">
+          <span id="cardFlipHintText">Chạm để lật ↷</span>
+        </div>
+
+        <!-- ================= MẶT TRƯỚC (CÂU HỎI & PHONICS) ================= -->
+        <div id="cardFront" class="card-face">
+          <!-- 1. Badge Loại Từ (Nổi bật, màu phân biệt) -->
+          <span id="frontWordType" class="card-type-badge">DANH TỪ</span>
+
+          <!-- 2. Ảnh Minh Họa 2D Vector Cartoon -->
+          <div class="card-img-wrapper">
+            <img id="cardImage" class="card-img" src="" alt="Minh họa từ vựng" onerror="handleCardImgError(this)" loading="lazy" />
+            <div id="cardImgFallback" class="card-img-fallback" style="display:none;">
+              <span style="font-size:26px; line-height:1;">🎨</span>
+              <span id="fallbackWord" style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">word</span>
+            </div>
+          </div>
+
+          <!-- 3. Hàng Âm Tiết Đục Lỗ -->
+          <div id="chunksRow" class="chunks-row"></div>
+
+          <!-- Nghĩa Tiếng Việt ngắn gọn khi hiện đáp án tại chỗ (In-place reveal) -->
+          <div id="frontMeaningRevealed" class="front-meaning-revealed" style="display:none;"></div>
+
+          <!-- 4. Phiên Âm IPA & Nút Loa Nghe Lại (không lật thẻ) -->
+          <div class="card-ipa-row">
+            <span id="frontWordIPA" class="word-ipa">/.../</span>
+            <button id="btnAudioPill" class="btn-audio-pill" onclick="speakCurrentWord(event)" title="Nghe lại phát âm">
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= MẶT SAU (LEAN OXFORD ADVANCED CARD) ================= -->
+        <div id="cardBack" class="card-face" style="display:none;">
+          <div class="back-lean-container">
+            <!-- 1. Định nghĩa tiếng Anh chuẩn Oxford -->
+            <div id="backOxfordDefBox" class="back-oxford-box" style="display:none;">
+              <span id="backOxfordDefLabel" class="back-oxford-label">Oxford Definition</span>
+              <p id="backOxfordDefText" class="back-oxford-text">"Definition"</p>
+            </div>
+
+            <!-- 2. Cụm từ đi kèm thông dụng (Collocations Chips) -->
+            <div id="backCollocationsBox" class="back-collocations-container" style="display:none;">
+              <span class="back-collocations-label">Common Collocations</span>
+              <div id="backCollocationsList" class="back-collocations-chips"></div>
+            </div>
+
+            <!-- 3. Câu ví dụ ngữ cảnh & bản dịch -->
+            <div id="backExampleBox" class="back-example-box" style="display:none;">
+              <div id="backWordExample" class="back-example-en">"Example sentence."</div>
+              <div id="backWordExampleVi" class="back-example-vi">"Bản dịch nghĩa."</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= MÀN HÌNH HOÀN THÀNH ================= -->
+        <div id="cardCompletion" class="card-face" style="display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:16px 8px;">
+          <div style="font-size:36px; margin-bottom:8px;">🎉</div>
+          <div style="font-weight:800; font-size:16px; color:#0f172a;">Đã hoàn thành lượt ôn tập!</div>
+          <div id="completionSubtitle" style="font-size:12px; color:#64748b; margin-top:4px;">Không còn thẻ nào cần ôn FSRS hôm nay.</div>
+          <button id="btnSwitchGlobalFromCompletion" onclick="loadStudySession(null)" style="display:none; margin-top:12px; border:none; background:#4f46e5; color:white; padding:7px 14px; font-size:12px; font-weight:700; border-radius:8px; cursor:pointer;">Ôn toàn bộ hệ thống</button>
+        </div>
+      </div>
+
+      <!-- Canvas Viết Tay Scratchpad -->
+      <div class="scratchpad-container">
+        <canvas id="scratchpadCanvas"></canvas>
+        <div id="scratchpadHint" class="scratchpad-hint">✍️ Viết tay âm tiết còn thiếu lên bảng</div>
+        <button class="btn-clear-canvas" onclick="clearCanvas()" title="Xóa chữ trên bảng">
+          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+          <span>Xóa bảng</span>
+        </button>
+      </div>
+
+      <!-- Vùng Dưới: Nút Hiện Đáp Án (Mặt trước) & Cụm 4 Nút FSRS (Mặt sau) -->
+      <div id="actionZone" class="action-zone">
+        <!-- Nút Hiện Đáp Án -->
+        <button id="btnRevealAnswer" class="btn-reveal-answer" onclick="revealAnswer()" title="Hiện đáp án để đối chiếu">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <span>Hiện đáp án</span>
+        </button>
+
+        <!-- Cụm 4 Nút FSRS (ẩn ở Mặt trước, hiện ở Mặt sau) -->
+        <div id="fsrsButtons" class="fsrs-buttons" style="display:none;">
+          <!-- 1. Lại (Again) -->
+          <button class="btn-fsrs btn-fsrs-again" onclick="rateFSRS('again')" title="Ôn lại sớm">
+            <span class="btn-fsrs-title">Lại</span>
+            <span id="labelAgain" class="btn-fsrs-sub">&lt; 10p</span>
+          </button>
+
+          <!-- 2. Khó (Hard) -->
+          <button class="btn-fsrs btn-fsrs-hard" onclick="rateFSRS('hard')" title="Khó nhớ">
+            <span class="btn-fsrs-title">Khó</span>
+            <span id="labelHard" class="btn-fsrs-sub">&lt; 15p</span>
+          </button>
+
+          <!-- 3. Tốt (Good) -->
+          <button class="btn-fsrs btn-fsrs-good" onclick="rateFSRS('good')" title="Nhớ tốt">
+            <span class="btn-fsrs-title">Tốt</span>
+            <span id="labelGood" class="btn-fsrs-sub">1 ngày</span>
+          </button>
+
+          <!-- 4. Dễ (Easy) -->
+          <button class="btn-fsrs btn-fsrs-easy" onclick="rateFSRS('easy')" title="Rất dễ">
+            <span class="btn-fsrs-title">Dễ</span>
+            <span id="labelEasy" class="btn-fsrs-sub">4 ngày</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Folders View (Option 1 Hybrid Mode) -->
+    <div id="foldersView" class="folders-view">
+      <!-- 1. Banner Ôn Tập Toàn Hệ Thống -->
+      <div class="folder-hero">
+        <div class="folder-hero-header">
+          <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#c7d2fe;">
+            ✨ Lộ trình FSRS toàn hệ thống
+          </span>
+          <span id="heroDueBadge" style="font-size:11px; font-weight:800; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:99px;">
+            0 thẻ đến hạn
+          </span>
+        </div>
+        <div class="folder-hero-title">Ôn tập tổng hợp tất cả chủ đề</div>
+        <div class="folder-hero-desc">Tối ưu hóa khả năng ghi nhớ dài hạn bằng thuật toán FSRS qua việc kết hợp từ vựng của mọi thư mục.</div>
+        <button class="btn-hero-study" onclick="handleStartGlobalStudy()">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span id="heroStudyBtnText">Bắt đầu ôn tập ngay</span>
+        </button>
+      </div>
+
+      <!-- 2. Danh Sách Thư Mục Chủ Đề -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; padding:0 2px;">
+        <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#64748b;">
+          Thư mục chủ đề (<span id="foldersCount">0</span>)
+        </span>
+        <button onclick="toggleQuickCreateFolder()" style="background:none; border:none; color:#4f46e5; font-size:11px; font-weight:700; cursor:pointer;">
+          + Tạo thư mục mới
+        </button>
+      </div>
+
+      <!-- Quick Create Folder Form -->
+      <div id="folderQuickCreateForm" class="folder-quick-create-box" style="display:none;">
+        <div style="font-size:12px; font-weight:700; color:#1e293b;">Tạo thư mục chủ đề mới</div>
+        <input type="text" id="newFolderNameInput" placeholder="VD: IELTS Topic 01 - Environment..." style="width:100%; padding:8px 10px; font-size:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none;" />
+        <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
+          <button onclick="toggleQuickCreateFolder(false)" style="border:none; background:#f1f5f9; padding:6px 12px; font-size:11px; font-weight:600; border-radius:8px; cursor:pointer;">Hủy</button>
+          <button onclick="submitNewFolder()" style="border:none; background:#4f46e5; color:white; padding:6px 14px; font-size:11px; font-weight:700; border-radius:8px; cursor:pointer;">Lưu thư mục</button>
+        </div>
+      </div>
+
+      <!-- Danh Sách Thư Mục -->
+      <div id="foldersList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <!-- Library View -->
+    <div id="libraryView" class="library-view">
+      <!-- Stats Card -->
+      <div class="stats-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#94a3b8;">
+          <span>TIẾN ĐỘ FSRS ANKI</span>
+          <span id="statTotalWords">Tổng 0 từ vựng</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stats-item">
+            <div id="statDue" class="stats-num" style="color:#f87171;">0</div>
+            <div class="stats-label">Cần ôn</div>
+          </div>
+          <div class="stats-item">
+            <div id="statLearning" class="stats-num" style="color:#fbbf24;">0</div>
+            <div class="stats-label">Đang học</div>
+          </div>
+          <div class="stats-item">
+            <div id="statReviewed" class="stats-num" style="color:#34d399;">0</div>
+            <div class="stats-label">Đã nhớ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Tools -->
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm từ vựng hoặc nghĩa..." oninput="renderLibrary()" />
+      </div>
+
+      <div style="display:flex; justify-content:space-between; gap:6px;">
+        <div style="display:flex; gap:6px;">
+          <button class="btn-subtle" onclick="exportBackup()" style="height:32px; font-size:11px; padding:0 10px;">
+            📥 Xuất sao lưu
+          </button>
+          <label class="btn-subtle" style="height:32px; font-size:11px; padding:0 10px; cursor:pointer;">
+            📤 Nhập file
+            <input type="file" accept=".json" onchange="importBackup(event)" style="display:none;" />
+          </label>
+        </div>
+        <button class="btn-new-words" onclick="openAISyncModal()" style="height:32px; font-size:11px; padding:0 12px; width:auto;">
+          + Thêm từ
+        </button>
+      </div>
+
+      <!-- Words List -->
+      <div id="wordsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- AI Sync Modal -->
+  <div id="aiModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <div style="font-size:15px; font-weight:700; color:#1e293b;">Đồng Bộ AI (Clipboard Bridge)</div>
+          <div style="font-size:11px; color:#64748b;">Chuẩn từ điển Oxford / Cambridge / Merriam-Webster</div>
+        </div>
+        <button onclick="closeAISyncModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#94a3b8;">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Folder Selection -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label for="aiFolderSelect" style="font-size:11px; font-weight:700; color:#4f46e5; text-transform:uppercase;">Thư mục lưu trữ</label>
+            <button type="button" onclick="toggleModalNewFolder()" id="btnToggleModalNewFolder" style="border:none; background:none; color:#4f46e5; font-size:11px; font-weight:600; cursor:pointer;">+ Tạo thư mục mới</button>
+          </div>
+          <select id="aiFolderSelect" style="width:100%; padding:8px 10px; font-size:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; background:white;"></select>
+          <div id="modalNewFolderBox" style="display:none; margin-top:8px; gap:6px;">
+            <input type="text" id="aiNewFolderName" placeholder="Tên thư mục mới (ví dụ: IELTS Band 7.0)..." style="flex:1; padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none;" />
+            <button type="button" onclick="createFolderFromModal()" style="border:none; background:#4f46e5; color:white; padding:7px 12px; font-size:11px; font-weight:700; border-radius:8px; cursor:pointer; white-space:nowrap;">Tạo</button>
+          </div>
+        </div>
+
+        <!-- Area 1: Prompt -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:11px; font-weight:700; color:#4f46e5; text-transform:uppercase;">Khu vực 1: Chuẩn bị Prompt</span>
+            <div style="display:flex; gap:6px;">
+              <a href="https://gemini.google.com" target="_blank" style="font-size:11px; color:#0284c7; text-decoration:none; font-weight:600; background:white; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">Gemini ↗</a>
+              <a href="https://chatgpt.com" target="_blank" style="font-size:11px; color:#059669; text-decoration:none; font-weight:600; background:white; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">ChatGPT ↗</a>
+            </div>
+          </div>
+          <input type="text" id="wordsInput" value="imperative, communication, comfortable, necessary, perseverance"
+            placeholder="Nhập từ vựng..." oninput="updatePromptPreview()"
+            style="width:100%; padding:8px 10px; font-size:12px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:8px; outline:none;" />
+          <div id="promptPreview" class="prompt-box"></div>
+          <button class="btn-copy" onclick="copyPrompt()">📋 Sao chép Prompt vào Clipboard</button>
+        </div>
+
+        <!-- Area 2: Paste AI Result -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px;">
+          <div style="font-size:11px; font-weight:700; color:#059669; text-transform:uppercase; margin-bottom:6px;">Khu vực 2: Dán kết quả AI</div>
+          <textarea id="aiJsonInput" class="json-input" placeholder="Dán toàn bộ khối JSON nhận được từ AI vào đây..."></textarea>
+          <div id="aiError" style="display:none; margin-top:6px; font-size:11px; color:#dc2626; background:#fee2e2; padding:6px 10px; border-radius:8px;"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button onclick="closeAISyncModal()" style="border:none; background:#f1f5f9; padding:8px 14px; font-size:12px; font-weight:600; border-radius:10px; cursor:pointer;">Đóng</button>
+        <button onclick="importAIResult()" style="border:none; background:#059669; color:white; padding:8px 16px; font-size:12px; font-weight:700; border-radius:10px; cursor:pointer;">Cập nhật & Sinh bộ thẻ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SUPABASE AUTH MODAL (GOOGLE OAUTH & EMAIL/PASSWORD)
+       ======================================================== -->
+  <div id="authModal" class="modal-backdrop" style="display:none;" onclick="closeAuthModal(event)">
+    <div class="modal-card" style="max-width:380px; text-align:center; padding:24px 20px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:flex-end; margin-top:-6px; margin-bottom:4px;">
+        <button onclick="closeAuthModal()" style="border:none; background:none; cursor:pointer; color:#94a3b8; font-size:18px; line-height:1; padding:4px;">✕</button>
+      </div>
+
+      <div class="logo-badge" style="width:42px; height:42px; margin:0 auto 10px auto; font-size:15px; border-radius:14px;">SC</div>
+      <h3 id="authModalTitle" style="font-size:18px; font-weight:900; color:#0f172a; letter-spacing:-0.3px;">Đăng nhập SyllableCloze</h3>
+      <p style="font-size:11.5px; color:#64748b; margin:4px 0 16px 0; line-height:1.4;">Đồng bộ tiến độ học FSRS và kho từ vựng đa thiết bị an toàn trên đám mây</p>
+
+      <!-- Alert Box -->
+      <div id="authAlert" style="display:none; padding:8px 12px; border-radius:10px; font-size:11px; margin-bottom:12px; text-align:left;"></div>
+
+      <!-- Google OAuth Button -->
+      <button id="btnGoogleAuth" onclick="handleGoogleSignIn()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:all 0.15s; margin-bottom:12px;">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Tiếp tục với Google</span>
+      </button>
+
+      <div style="display:flex; align-items:center; gap:8px; margin:14px 0;">
+        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+        <span style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase;">HOẶC EMAIL</span>
+        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+      </div>
+
+      <!-- Email & Password Form -->
+      <form id="authEmailForm" onsubmit="handleEmailAuthSubmit(event)" style="display:flex; flex-direction:column; gap:8px;">
+        <input type="email" id="authEmailInput" placeholder="Địa chỉ email..." required
+          style="width:100%; padding:9px 12px; font-size:12px; border:1px solid #cbd5e1; border-radius:10px; outline:none; background:#f8fafc;" />
+        <input type="password" id="authPasswordInput" placeholder="Mật khẩu (tối thiểu 6 ký tự)..." required minlength="6"
+          style="width:100%; padding:9px 12px; font-size:12px; border:1px solid #cbd5e1; border-radius:10px; outline:none; background:#f8fafc;" />
+        
+        <button type="submit" id="btnSubmitAuth" style="width:100%; padding:10px; background:#4f46e5; color:white; font-size:12px; font-weight:700; border:none; border-radius:10px; cursor:pointer; margin-top:4px; box-shadow:0 2px 8px rgba(79,70,229,0.3);">
+          Đăng nhập
+        </button>
+      </form>
+
+      <!-- Toggle Mode -->
+      <div style="margin-top:14px;">
+        <button type="button" id="btnToggleAuthMode" onclick="toggleAuthMode()" style="border:none; background:none; color:#4f46e5; font-size:11.5px; font-weight:700; cursor:pointer;">
+          Chưa có tài khoản? Đăng ký ngay
+        </button>
+      </div>
+
+      <!-- Collapsible Supabase Config -->
+      <div style="margin-top:16px; border-top:1px solid #f1f5f9; padding-top:10px;">
+        <button type="button" onclick="toggleSupabaseConfigBox()" style="border:none; background:none; color:#94a3b8; font-size:10.5px; cursor:pointer; font-weight:600;">
+          ⚙️ Cài đặt Supabase URL & Key ▼
+        </button>
+        <div id="supabaseConfigBox" style="display:none; margin-top:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px; text-align:left;">
+          <div style="font-size:10px; font-weight:700; color:#475569; margin-bottom:4px;">SUPABASE URL</div>
+          <input type="text" id="cfgSupabaseUrl" placeholder="https://your-project.supabase.co"
+            style="width:100%; padding:6px 8px; font-size:11px; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:6px; outline:none;" />
+          <div style="font-size:10px; font-weight:700; color:#475569; margin-bottom:4px;">SUPABASE ANON KEY</div>
+          <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp..."
+            style="width:100%; padding:6px 8px; font-size:11px; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:8px; outline:none;" />
+          <button type="button" onclick="saveSupabaseConfig()" style="width:100%; padding:6px; background:#10b981; color:white; border:none; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">
+            Lưu cấu hình
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. LIGHTWEIGHT NATIVE INDEXEDDB ENGINE
+    // ==========================================
+    const DB_NAME = 'VocabSyllableAppDB';
+    const DB_VERSION = 3;
+    let dbInstance = null;
+    const DEFAULT_FOLDER_ID = 'folder_default';
+    const DEFAULT_FOLDER_NAME = 'Thư mục mặc định';
+    let activeFolderId = null; // null = ôn tập toàn bộ từ đến hạn; string = lọc theo folder
+    let activeFolderName = '';
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        if (dbInstance) return resolve(dbInstance);
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('folders')) {
+            const folderStore = db.createObjectStore('folders', { keyPath: 'id' });
+            folderStore.createIndex('createdAt', 'createdAt', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('words')) {
+            const wordStore = db.createObjectStore('words', { keyPath: 'id' });
+            wordStore.createIndex('folderId', 'folderId', { unique: false });
+          } else {
+            const wordStore = req.transaction.objectStore('words');
+            if (!wordStore.indexNames.contains('folderId')) {
+              wordStore.createIndex('folderId', 'folderId', { unique: false });
+            }
+          }
+          if (!db.objectStoreNames.contains('flashcards')) {
+            const cardStore = db.createObjectStore('flashcards', { keyPath: 'id' });
+            cardStore.createIndex('wordId', 'wordId', { unique: false });
+            cardStore.createIndex('due', 'due', { unique: false });
+            cardStore.createIndex('folderId', 'folderId', { unique: false });
+          } else {
+            const cardStore = req.transaction.objectStore('flashcards');
+            if (!cardStore.indexNames.contains('folderId')) {
+              cardStore.createIndex('folderId', 'folderId', { unique: false });
+            }
+          }
+        };
+        req.onsuccess = (e) => {
+          dbInstance = e.target.result;
+          resolve(dbInstance);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetAll(storeName) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const store = tx.objectStore(storeName);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbPut(storeName, item) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.put(item);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbBulkPut(storeName, items) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        items.forEach(item => store.put(item));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbDelete(storeName, key) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.delete(key);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // ==========================================
+    // 2. FSRS ENGINE (ts-fsrs STANDARD ALGORITHM)
+    // ==========================================
+    const FSRS_PARAMS = {
+      w: [0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575, 0.1192, 1.01925, 1.9395, 0.11, 0.29605, 0.22695, 0.56995, 2.9444],
+      request_retention: 0.9,
+      maximum_interval: 36500
+    };
+
+    function createEmptyFSRSCard(now = new Date()) {
+      return {
+        due: now instanceof Date ? now : new Date(now),
+        stability: 0,
+        difficulty: 0,
+        elapsed_days: 0,
+        scheduled_days: 0,
+        reps: 0,
+        lapses: 0,
+        state: 0, // 0: New, 1: Learning, 2: Review, 3: Relearning
+        last_review: undefined
+      };
+    }
+
+    // Tự động nhận diện và nâng cấp thẻ cũ sang chuẩn FSRS
+    function ensureFSRSCard(card) {
+      if (card && card.fsrsCard && card.fsrsCard.due) {
+        return {
+          ...card.fsrsCard,
+          due: new Date(card.fsrsCard.due),
+          last_review: card.fsrsCard.last_review ? new Date(card.fsrsCard.last_review) : undefined
+        };
+      }
+      const fallbackDate = card?.due ? new Date(card.due) : card?.dueDate ? new Date(card.dueDate) : new Date();
+      return createEmptyFSRSCard(fallbackDate);
+    }
+
+    function formatFSRSInterval(targetDate, now = new Date()) {
+      const diffMs = targetDate.getTime() - now.getTime();
+      const diffMinutes = Math.round(diffMs / (60 * 1000));
+      const diffHours = Math.round(diffMs / (60 * 60 * 1000));
+      const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
+
+      if (diffMinutes < 60) return `< ${Math.max(1, diffMinutes)}p`;
+      if (diffHours < 24) return `${diffHours}g`;
+      if (diffDays <= 30) return `${diffDays} ngày`;
+      const diffMonths = Math.round(diffDays / 30);
+      return `${diffMonths} thg`;
+    }
+
+    // Tính toán trước 4 trạng thái cho 4 nút: Lại, Khó, Tốt, Dễ
+    function getFSRSPreviewIntervals(fsrsCard, now = new Date()) {
+      const againCard = simulateFSRSRating(fsrsCard, 'again', now);
+      const hardCard = simulateFSRSRating(fsrsCard, 'hard', now);
+      const goodCard = simulateFSRSRating(fsrsCard, 'good', now);
+      const easyCard = simulateFSRSRating(fsrsCard, 'easy', now);
+
+      return {
+        again: { card: againCard, label: formatFSRSInterval(againCard.due, now) },
+        hard: { card: hardCard, label: formatFSRSInterval(hardCard.due, now) },
+        good: { card: goodCard, label: formatFSRSInterval(goodCard.due, now) },
+        easy: { card: easyCard, label: formatFSRSInterval(easyCard.due, now) }
+      };
+    }
+
+    function simulateFSRSRating(card, rating, now = new Date()) {
+      const cloned = { ...card, due: new Date(card.due) };
+      const nowMs = now.getTime();
+      const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+      if (card.state === 0) {
+        // State 0: New
+        if (rating === 'again') {
+          cloned.due = new Date(nowMs + 10 * 60 * 1000); // 10 phút
+          cloned.state = 1; // Learning
+          cloned.stability = FSRS_PARAMS.w[0];
+          cloned.difficulty = 7.0;
+        } else if (rating === 'hard') {
+          cloned.due = new Date(nowMs + 15 * 60 * 1000); // 15 phút
+          cloned.state = 1;
+          cloned.stability = FSRS_PARAMS.w[1];
+          cloned.difficulty = 6.0;
+        } else if (rating === 'good') {
+          cloned.due = new Date(nowMs + 1 * ONE_DAY_MS); // 1 ngày
+          cloned.state = 2; // Review
+          cloned.stability = FSRS_PARAMS.w[2];
+          cloned.difficulty = 5.0;
+          cloned.scheduled_days = 1;
+        } else {
+          // easy
+          const easyDays = Math.round(FSRS_PARAMS.w[3] * 0.45) || 4;
+          cloned.due = new Date(nowMs + easyDays * ONE_DAY_MS);
+          cloned.state = 2;
+          cloned.stability = FSRS_PARAMS.w[3];
+          cloned.difficulty = 4.0;
+          cloned.scheduled_days = easyDays;
+        }
+        cloned.reps = 1;
+        cloned.last_review = now;
+        return cloned;
+      }
+
+      // Review / Learning Card
+      let nextDays = 1;
+      const currentStability = Math.max(0.5, card.stability || 1.0);
+
+      if (rating === 'again') {
+        cloned.due = new Date(nowMs + 10 * 60 * 1000);
+        cloned.state = 3; // Relearning
+        cloned.lapses = (card.lapses || 0) + 1;
+        cloned.stability = Math.max(0.3, currentStability * 0.5);
+      } else if (rating === 'hard') {
+        nextDays = Math.max(1, Math.round(currentStability * 1.2));
+        cloned.due = new Date(nowMs + nextDays * ONE_DAY_MS);
+        cloned.state = 2;
+        cloned.stability = currentStability * 1.1;
+      } else if (rating === 'good') {
+        nextDays = Math.max(2, Math.round(currentStability * 2.2));
+        cloned.due = new Date(nowMs + nextDays * ONE_DAY_MS);
+        cloned.state = 2;
+        cloned.stability = currentStability * 2.0;
+      } else {
+        // easy
+        nextDays = Math.max(4, Math.round(currentStability * 3.4));
+        cloned.due = new Date(nowMs + nextDays * ONE_DAY_MS);
+        cloned.state = 2;
+        cloned.stability = currentStability * 3.2;
+      }
+
+      cloned.reps = (card.reps || 0) + 1;
+      cloned.scheduled_days = nextDays;
+      cloned.last_review = now;
+      return cloned;
+    }
+
+    // ==========================================
+    // 3. SEED DATA & INITIALIZATION
+    // ==========================================
+    const SEED_WORDS = [
+      {
+        word: 'imperative',
+        ipa: '/ɪmˈper.ə.tɪv/',
+        type: 'adj',
+        meaning: 'cực kỳ quan trọng, cấp bách, bắt buộc',
+        definition_en: 'extremely important or urgent',
+        collocations: ['vital imperative', 'imperative to act', 'moral imperative'],
+        chunks: ['im', 'per', 'a', 'tive'],
+        example: 'It is imperative to act immediately.',
+        example_vi: 'Cấp bách phải hành động ngay.'
+      },
+      {
+        word: 'communication',
+        ipa: '/kəˌmjuː.nəˈkeɪ.ʃən/',
+        type: 'n',
+        meaning: 'sự giao tiếp, trao đổi thông tin',
+        definition_en: 'the activity or process of expressing ideas and feelings or of giving people information',
+        collocations: ['effective communication', 'communication skills', 'breakdown in communication'],
+        chunks: ['com', 'mu', 'ni', 'ca', 'tion'],
+        example: 'Good communication is essential in teamwork.',
+        example_vi: 'Giao tiếp tốt là cốt lõi trong làm việc nhóm.'
+      },
+      {
+        word: 'comfortable',
+        ipa: '/ˈkʌm.fət.ə.bəl/',
+        type: 'adj',
+        meaning: 'thoải mái, tiện nghi',
+        definition_en: 'making you feel physically relaxed, without any pain or other unpleasant feelings',
+        collocations: ['comfortable position', 'feel comfortable', 'comfortable lifestyle'],
+        chunks: ['com', 'fort', 'a', 'ble'],
+        example: 'These new shoes are very comfortable.',
+        example_vi: 'Đôi giày mới này rất thoải mái.'
+      },
+      {
+        word: 'necessary',
+        ipa: '/ˈnes.ə.ser.i/',
+        type: 'adj',
+        meaning: 'cần thiết, thiết yếu',
+        definition_en: 'that is needed for a purpose or a reason',
+        collocations: ['absolutely necessary', 'necessary step', 'deem something necessary'],
+        chunks: ['nec', 'es', 'sar', 'y'],
+        example: 'Sleep is necessary for good health.',
+        example_vi: 'Giấc ngủ là cần thiết cho sức khỏe.'
+      },
+      {
+        word: 'perseverance',
+        ipa: '/ˌpɜː.sɪˈvɪə.rəns/',
+        type: 'n',
+        meaning: 'sự kiên trì, bền bỉ vượt khó',
+        definition_en: 'the quality of continuing to try to achieve a particular aim despite difficulties',
+        collocations: ['great perseverance', 'demonstrate perseverance', 'perseverance pays off'],
+        chunks: ['per', 'se', 'ver', 'ance'],
+        example: 'Success requires patience and perseverance.',
+        example_vi: 'Thành công đòi hỏi lòng kiên trì.'
+      }
+    ];
+
+    function createCardsForWord(wordId, count, folderId = DEFAULT_FOLDER_ID) {
+      const now = Date.now();
+      const cards = [];
+      for (let i = 0; i < count; i++) {
+        const fsrsCard = createEmptyFSRSCard(new Date(now));
+        cards.push({
+          id: 'card_' + now + '_' + i + '_' + Math.random().toString(36).substr(2, 6),
+          wordId: wordId,
+          folderId: folderId || DEFAULT_FOLDER_ID,
+          hiddenChunkIndex: i,
+          due: now,
+          dueDate: now,
+          fsrsCard: fsrsCard,
+          interval: 0,
+          repetitions: 0,
+          easeFactor: 2.5,
+          state: 'new'
+        });
+      }
+      return cards;
+    }
+
+    async function initSeedData() {
+      // 1. Đảm bảo thư mục mặc định tồn tại
+      const folders = await dbGetAll('folders');
+      if (folders.length === 0) {
+        await dbPut('folders', {
+          id: DEFAULT_FOLDER_ID,
+          name: DEFAULT_FOLDER_NAME,
+          description: 'Kho từ vựng chung',
+          color: '#4f46e5',
+          createdAt: Date.now()
+        });
+      }
+
+      // 2. Migration: gán folderId mặc định cho dữ liệu cũ nếu chưa có
+      const existingWords = await dbGetAll('words');
+      for (const w of existingWords) {
+        let changed = false;
+        if (!w.folderId) {
+          w.folderId = DEFAULT_FOLDER_ID;
+          changed = true;
+        }
+        const seedMatch = SEED_WORDS.find(s => s.word.toLowerCase() === w.word.toLowerCase());
+        if (seedMatch) {
+          if (!w.definition_en && seedMatch.definition_en) {
+            w.definition_en = seedMatch.definition_en;
+            changed = true;
+          }
+          if ((!w.collocations || w.collocations.length === 0) && seedMatch.collocations) {
+            w.collocations = seedMatch.collocations;
+            changed = true;
+          }
+        }
+        if (changed) {
+          await dbPut('words', w);
+        }
+      }
+
+      const existingCards = await dbGetAll('flashcards');
+      for (const c of existingCards) {
+        if (!c.folderId) {
+          c.folderId = DEFAULT_FOLDER_ID;
+          await dbPut('flashcards', c);
+        }
+      }
+
+      // 3. Khởi tạo dữ liệu seed nếu kho hoàn toàn trống
+      if (existingWords.length === 0) {
+        for (let i = 0; i < SEED_WORDS.length; i++) {
+          const w = SEED_WORDS[i];
+          const wordId = 'w_seed_' + i;
+          const wordItem = { ...w, id: wordId, folderId: DEFAULT_FOLDER_ID, createdAt: Date.now() - (SEED_WORDS.length - i) * 1000 };
+          const cards = createCardsForWord(wordId, w.chunks.length, DEFAULT_FOLDER_ID);
+          await dbPut('words', wordItem);
+          await dbBulkPut('flashcards', cards);
+        }
+      }
+    }
+
+    // ==========================================
+    // 3B. FOLDER CONTROLLER & HYBRID SRS QUEUE
+    // ==========================================
+    async function getFolderWithStatsList(now = Date.now()) {
+      const allFolders = await dbGetAll('folders');
+      const allWords = await dbGetAll('words');
+      const allCards = await dbGetAll('flashcards');
+
+      return allFolders.map(folder => {
+        const wordCount = allWords.filter(w => (w.folderId || DEFAULT_FOLDER_ID) === folder.id).length;
+        const dueCount = allCards.filter(c => {
+          if ((c.folderId || DEFAULT_FOLDER_ID) !== folder.id) return false;
+          const cardDue = c.due ?? c.dueDate ?? 0;
+          const fsrs = ensureFSRSCard(c);
+          return cardDue <= now || fsrs.state === 0 || fsrs.state === 1 || fsrs.state === 3 || c.state === 'learning' || c.state === 'new';
+        }).length;
+
+        return {
+          ...folder,
+          wordCount,
+          dueCount
+        };
+      });
+    }
+
+    async function renderFoldersView() {
+      const foldersListEl = document.getElementById('foldersList');
+      if (!foldersListEl) return;
+
+      const folderStats = await getFolderWithStatsList();
+      const allCards = await dbGetAll('flashcards');
+      const now = Date.now();
+      const totalGlobalDue = allCards.filter(c => {
+        const cardDue = c.due ?? c.dueDate ?? 0;
+        const fsrs = ensureFSRSCard(c);
+        return cardDue <= now || fsrs.state === 0 || fsrs.state === 1 || fsrs.state === 3 || c.state === 'learning' || c.state === 'new';
+      }).length;
+
+      // Cập nhật hero banner
+      const heroDueBadge = document.getElementById('heroDueBadge');
+      if (heroDueBadge) heroDueBadge.innerText = `${totalGlobalDue} thẻ đến hạn`;
+      const heroStudyBtnText = document.getElementById('heroStudyBtnText');
+      if (heroStudyBtnText) {
+        heroStudyBtnText.innerText = totalGlobalDue > 0 ? `Ôn toàn bộ (${totalGlobalDue} thẻ)` : 'Luyện tập ngẫu nhiên';
+      }
+
+      // Cập nhật số lượng thư mục
+      const foldersCountEl = document.getElementById('foldersCount');
+      if (foldersCountEl) foldersCountEl.innerText = folderStats.length;
+      const navTotalFoldersCount = document.getElementById('navTotalFoldersCount');
+      if (navTotalFoldersCount) navTotalFoldersCount.innerText = `${folderStats.length} thư mục`;
+
+      if (folderStats.length === 0) {
+        foldersListEl.innerHTML = `<div style="text-align:center; padding:30px; color:#94a3b8; font-size:13px;">Chưa có thư mục nào. Hãy tạo thư mục đầu tiên!</div>`;
+        return;
+      }
+
+      foldersListEl.innerHTML = folderStats.map(folder => {
+        const isDefault = folder.id === DEFAULT_FOLDER_ID;
+        const dueBadgeColor = folder.dueCount > 0 ? 'color:#ef4444; background:#fee2e2;' : 'color:#10b981; background:#d1fae5;';
+        const dueBadgeText = folder.dueCount > 0 ? `${folder.dueCount} cần ôn` : 'Đã thuộc hết';
+
+        return `
+          <div class="folder-card" onclick="startFolderStudy('${folder.id}', '${escapeHtml(folder.name)}')">
+            <div class="folder-card-main">
+              <div class="folder-icon" style="background:${folder.color || '#e0e7ff'}; color:#4338ca;">
+                📁
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="folder-title">${escapeHtml(folder.name)}</span>
+                  ${isDefault ? '<span style="font-size:10px; background:#f1f5f9; color:#64748b; padding:1px 6px; border-radius:4px; font-weight:600;">Mặc định</span>' : ''}
+                </div>
+                <div class="folder-meta">
+                  <span>${folder.wordCount} từ vựng</span>
+                  <span>•</span>
+                  <span class="folder-due-badge" style="${dueBadgeColor}">${dueBadgeText}</span>
+                </div>
+              </div>
+            </div>
+            <div class="folder-actions" onclick="event.stopPropagation()">
+              <button class="btn-folder-study" onclick="startFolderStudy('${folder.id}', '${escapeHtml(folder.name)}')">
+                Ôn tập
+              </button>
+              ${!isDefault ? `
+                <button class="btn-folder-delete" onclick="deleteFolder('${folder.id}', '${escapeHtml(folder.name)}')" title="Xóa thư mục">
+                  🗑️
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleQuickCreateFolder(show) {
+      const form = document.getElementById('folderQuickCreateForm');
+      if (!form) return;
+      const willShow = show !== undefined ? show : (form.style.display === 'none');
+      form.style.display = willShow ? 'flex' : 'none';
+      if (willShow) {
+        const input = document.getElementById('newFolderNameInput');
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
+      }
+    }
+
+    async function submitNewFolder() {
+      const input = document.getElementById('newFolderNameInput');
+      if (!input) return;
+      const name = input.value.trim();
+      if (!name) {
+        showToast('Vui lòng nhập tên thư mục!');
+        return;
+      }
+      const folderId = 'folder_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const newFolder = {
+        id: folderId,
+        name: name,
+        color: '#e0e7ff',
+        createdAt: Date.now()
+      };
+      await dbPut('folders', newFolder);
+      toggleQuickCreateFolder(false);
+      showToast(`Đã tạo thư mục "${name}"`);
+      await renderFoldersView();
+    }
+
+    function toggleModalNewFolder() {
+      const box = document.getElementById('modalNewFolderBox');
+      if (!box) return;
+      const isHidden = box.style.display === 'none';
+      box.style.display = isHidden ? 'flex' : 'none';
+      if (isHidden) {
+        const input = document.getElementById('aiNewFolderName');
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
+      }
+    }
+
+    async function createFolderFromModal() {
+      const input = document.getElementById('aiNewFolderName');
+      if (!input) return;
+      const name = input.value.trim();
+      if (!name) {
+        showToast('Vui lòng nhập tên thư mục!');
+        return;
+      }
+      const folderId = 'folder_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const newFolder = {
+        id: folderId,
+        name: name,
+        color: '#e0e7ff',
+        createdAt: Date.now()
+      };
+      await dbPut('folders', newFolder);
+      input.value = '';
+      document.getElementById('modalNewFolderBox').style.display = 'none';
+      await populateFolderSelect(folderId);
+      showToast(`Đã tạo và chọn thư mục "${name}"`);
+    }
+
+    async function populateFolderSelect(selectedId = null) {
+      const select = document.getElementById('aiFolderSelect');
+      if (!select) return;
+      const folders = await dbGetAll('folders');
+      if (folders.length === 0) {
+        await dbPut('folders', {
+          id: DEFAULT_FOLDER_ID,
+          name: DEFAULT_FOLDER_NAME,
+          description: 'Kho từ vựng chung',
+          color: '#4f46e5',
+          createdAt: Date.now()
+        });
+        folders.push({ id: DEFAULT_FOLDER_ID, name: DEFAULT_FOLDER_NAME });
+      }
+
+      select.innerHTML = folders.map(f => `
+        <option value="${f.id}" ${selectedId === f.id || (!selectedId && f.id === DEFAULT_FOLDER_ID) ? 'selected' : ''}>
+          📁 ${escapeHtml(f.name)}
+        </option>
+      `).join('');
+    }
+
+    async function deleteFolder(folderId, folderName) {
+      if (folderId === DEFAULT_FOLDER_ID) {
+        showToast('Không thể xóa thư mục mặc định!');
+        return;
+      }
+      if (confirm(`Bạn có chắc muốn xóa thư mục "${folderName}" và tất cả từ vựng, thẻ bên trong?`)) {
+        await dbDelete('folders', folderId);
+        const words = await dbGetAll('words');
+        for (const w of words) {
+          if (w.folderId === folderId) {
+            await dbDelete('words', w.id);
+            const cards = await dbGetAll('flashcards');
+            for (const c of cards) {
+              if (c.wordId === w.id) {
+                await dbDelete('flashcards', c.id);
+              }
+            }
+          }
+        }
+        showToast(`Đã xóa thư mục "${folderName}"`);
+        if (activeFolderId === folderId) {
+          activeFolderId = null;
+          await loadStudySession(null);
+        }
+        await renderFoldersView();
+        await renderLibrary();
+      }
+    }
+
+    function startFolderStudy(folderId, folderName) {
+      activeFolderId = folderId;
+      switchTab('study');
+      loadStudySession(folderId);
+    }
+
+    function handleStartGlobalStudy() {
+      activeFolderId = null;
+      switchTab('study');
+      loadStudySession(null);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ==========================================
+    // 4. TOUCH CANVAS SCRATCHPAD (HIGH-DPI & SMOOTH)
+    // ==========================================
+    let canvas, ctx;
+    let isDrawing = false;
+    let lastPoint = null;
+    let hasStrokes = false;
+    let strokesHistory = [];
+    let currentStroke = [];
+
+    function initCanvas() {
+      canvas = document.getElementById('scratchpadCanvas');
+      if (!canvas) return;
+      ctx = canvas.getContext('2d');
+      setupCanvasSize();
+
+      window.addEventListener('resize', setupCanvasSize);
+
+      canvas.addEventListener('pointerdown', (e) => {
+        if (isDrawerOpen) return;
+        e.preventDefault();
+        canvas.setPointerCapture(e.pointerId);
+        const rect = canvas.getBoundingClientRect();
+        const pt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        isDrawing = true;
+        lastPoint = pt;
+        hasStrokes = true;
+        currentStroke = [pt];
+        document.getElementById('scratchpadHint').style.display = 'none';
+
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 1.75, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f172a';
+        ctx.fill();
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (!isDrawing || !lastPoint || isDrawerOpen) return;
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const pt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        const mid = { x: (lastPoint.x + pt.x) / 2, y: (lastPoint.y + pt.y) / 2 };
+        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, mid.x, mid.y);
+        ctx.stroke();
+
+        lastPoint = pt;
+        currentStroke.push(pt);
+      });
+
+      const stopDraw = () => {
+        if (!isDrawing) return;
+        isDrawing = false;
+        lastPoint = null;
+        if (currentStroke.length > 0) {
+          strokesHistory.push([...currentStroke]);
+          currentStroke = [];
+        }
+      };
+
+      canvas.addEventListener('pointerup', stopDraw);
+      canvas.addEventListener('pointercancel', stopDraw);
+    }
+
+    function redrawStrokes() {
+      if (!canvas || !ctx || strokesHistory.length === 0) return;
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (const stroke of strokesHistory) {
+        if (!stroke || stroke.length === 0) continue;
+        if (stroke.length === 1) {
+          ctx.beginPath();
+          ctx.arc(stroke[0].x, stroke[0].y, 1.75, 0, Math.PI * 2);
+          ctx.fillStyle = '#0f172a';
+          ctx.fill();
+          continue;
+        }
+        ctx.beginPath();
+        ctx.moveTo(stroke[0].x, stroke[0].y);
+        for (let i = 1; i < stroke.length; i++) {
+          const mid = { x: (stroke[i - 1].x + stroke[i].x) / 2, y: (stroke[i - 1].y + stroke[i].y) / 2 };
+          ctx.quadraticCurveTo(stroke[i - 1].x, stroke[i - 1].y, mid.x, mid.y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function setupCanvasSize() {
+      if (!canvas || !canvas.parentElement) return;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      redrawStrokes();
+    }
+
+    function clearCanvas() {
+      if (!canvas || !ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasStrokes = false;
+      strokesHistory = [];
+      currentStroke = [];
+      document.getElementById('scratchpadHint').style.display = 'flex';
+    }
+
+    // ==========================================
+    // 5. SIDEBAR DRAWER CONTROLLER (GEMINI STYLE)
+    // ==========================================
+    let isDrawerOpen = false;
+
+    function openDrawer() {
+      isDrawerOpen = true;
+      document.getElementById('drawerBackdrop').classList.add('active');
+      document.getElementById('sidebarDrawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+      isDrawerOpen = false;
+      document.getElementById('drawerBackdrop').classList.remove('active');
+      document.getElementById('sidebarDrawer').classList.remove('open');
+    }
+
+    function handleDrawerNav(action) {
+      closeDrawer();
+      if (typeof action === 'function') {
+        action();
+      }
+    }
+
+    // Audio & Settings State
+    let currentVoiceLang = 'en-US';
+    let currentSpeechRate = 0.88;
+
+    // ==========================================
+    // 5B. 3-TIER ZERO-LATENCY AUDIO ENGINE (v0.8.1)
+    // ==========================================
+    class StudioAudioEngine {
+      constructor() {
+        this.preloadedAudios = new Map();
+        this.currentAudio = null;
+      }
+
+      /**
+       * Tạo đường dẫn trực tiếp tới kho âm thanh chuẩn Oxford trên Google Global CDN (0ms API roundtrip)
+       */
+      getDirectOxfordUrl(word, lang = 'en-US') {
+        const clean = word.trim().toLowerCase();
+        const accent = lang.includes('GB') || lang.includes('UK') ? 'gb' : 'us';
+        return `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${encodeURIComponent(clean)}--_${accent}_1.mp3`;
+      }
+
+      /**
+       * Nạp trước (Preload) âm thanh vào RAM ngay khi thẻ bài hiển thị
+       */
+      preload(word, lang = currentVoiceLang) {
+        if (!word || typeof window === 'undefined') return;
+        const clean = word.trim().toLowerCase();
+        const cacheKey = `${clean}_${lang}`;
+        if (this.preloadedAudios.has(cacheKey)) return;
+
+        try {
+          const url = this.getDirectOxfordUrl(clean, lang);
+          const audio = new Audio();
+          audio.preload = 'auto';
+          audio.src = url;
+          this.preloadedAudios.set(cacheKey, audio);
+        } catch (e) {
+          // Bỏ qua lỗi preload nền
+        }
+      }
+
+      stopCurrentAudio() {
+        if (this.currentAudio) {
+          try {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+          } catch (e) {}
+          this.currentAudio = null;
+        }
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          try {
+            window.speechSynthesis.cancel();
+          } catch (e) {}
+        }
+      }
+
+      async playPronunciation(word, lang = currentVoiceLang, rate = currentSpeechRate) {
+        const cleanWord = word ? word.trim() : '';
+        if (!cleanWord) return;
+
+        this.stopCurrentAudio();
+        const cacheKey = `${cleanWord.toLowerCase()}_${lang}`;
+
+        // TẦNG 1: DIRECT GOOGLE OXFORD CDN MP3 (Thu âm người thật chuẩn Oxford, 0ms overhead)
+        try {
+          // 1.1 Nếu đã nạp trước trong RAM
+          const preloaded = this.preloadedAudios.get(cacheKey);
+          if (preloaded && preloaded.error === null) {
+            preloaded.currentTime = 0;
+            this.currentAudio = preloaded;
+            await preloaded.play();
+            return;
+          }
+
+          // 1.2 Nếu chưa nạp trước, phát trực tiếp link Oxford CDN
+          const directUrl = this.getDirectOxfordUrl(cleanWord, lang);
+          await this.playAudioFromUrl(directUrl);
+          return;
+        } catch (e) {
+          console.warn('[StudioAudioEngine] Tầng 1 (Oxford CDN) không khả dụng, chuyển sang Tầng 2...');
+        }
+
+        // TẦNG 2: GOOGLE TRANSLATE STREAM CDN (Dự phòng mạng nhẹ)
+        try {
+          const googleCdnUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(lang)}&q=${encodeURIComponent(cleanWord)}`;
+          await this.playAudioFromUrl(googleCdnUrl);
+          return;
+        } catch (e) {
+          console.warn('[StudioAudioEngine] Tầng 2 thất bại, chuyển sang Tầng 3 (Offline)...');
+        }
+
+        // TẦNG 3: NATIVE NATURAL SPEECH SYNTHESIS (Offline an toàn)
+        await this.playOfflineSpeech(cleanWord, lang, rate);
+      }
+
+      playAudioFromUrl(url) {
+        return new Promise((resolve, reject) => {
+          const audio = new Audio(url);
+          this.currentAudio = audio;
+          audio.onended = () => {
+            this.currentAudio = null;
+            resolve();
+          };
+          audio.onerror = (e) => {
+            this.currentAudio = null;
+            reject(e);
+          };
+          audio.play().catch(err => {
+            this.currentAudio = null;
+            reject(err);
+          });
+        });
+      }
+
+      playOfflineSpeech(word, lang = 'en-US', rate = 0.88) {
+        return new Promise((resolve) => {
+          if (typeof window === 'undefined' || !window.speechSynthesis) return resolve();
+
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(word);
+          utterance.lang = lang;
+          utterance.rate = rate;
+
+          const voices = window.speechSynthesis.getVoices();
+          const highQualityVoice = voices.find(
+            (v) =>
+              (v.name.includes('Natural') ||
+                v.name.includes('Google US English') ||
+                v.name.includes('Google UK English') ||
+                v.name.includes('Samantha') ||
+                v.name.includes('Aria') ||
+                v.name.includes('Jenny') ||
+                v.name.includes('Microsoft')) &&
+              v.lang.startsWith(lang.substring(0, 2))
+          ) || voices.find((v) => v.lang === lang || v.lang.startsWith(lang.substring(0, 2)));
+
+          if (highQualityVoice) {
+            utterance.voice = highQualityVoice;
+          }
+
+          utterance.onend = () => resolve();
+          utterance.onerror = () => resolve();
+          window.speechSynthesis.speak(utterance);
+        });
+      }
+    }
+
+    const soundEngine = new StudioAudioEngine();
+
+    function setVoiceLanguage(lang) {
+      currentVoiceLang = lang;
+      document.getElementById('btnVoiceUS').classList.toggle('active', lang === 'en-US');
+      document.getElementById('btnVoiceUK').classList.toggle('active', lang === 'en-GB');
+      showToast(`Đã chuyển giọng đọc: ${lang === 'en-US' ? 'Tiếng Anh Mỹ' : 'Tiếng Anh Anh'}`);
+      if (currentStudyList[currentIndex]?.word?.word) {
+        soundEngine.preload(currentStudyList[currentIndex].word.word, lang);
+      }
+    }
+
+    function setSpeechRate(rate) {
+      currentSpeechRate = rate;
+      document.getElementById('btnRateNormal').classList.toggle('active', rate >= 0.85);
+      document.getElementById('btnRateSlow').classList.toggle('active', rate < 0.85);
+      showToast(`Tốc độ phát âm: ${rate >= 0.85 ? 'Chuẩn' : 'Chậm'}`);
+    }
+
+    // ==========================================
+    // 6. STUDY STATE & FSRS 4-BUTTON CONTROLLER
+    // ==========================================
+    let currentStudyList = [];
+    let currentIndex = 0;
+    let isCardFlipped = false;
+    let isAnswerRevealed = false;
+
+    // Định dạng nhãn & màu sắc badge loại từ chuẩn sư phạm
+    function formatCardType(type) {
+      if (!type) return 'TỪ VỰNG';
+      const t = type.toLowerCase().trim();
+      if (t === 'n' || t.includes('noun') || t.includes('danh')) return 'DANH TỪ';
+      if (t === 'v' || t.includes('verb') || t.includes('động')) return 'ĐỘNG TỪ';
+      if (t === 'adj' || t.includes('adjective') || t.includes('tính')) return 'TÍNH TỪ';
+      if (t === 'adv' || t.includes('adverb') || t.includes('phó') || t.includes('trạng')) return 'PHÓ TỪ';
+      return t.toUpperCase();
+    }
+
+    function getBadgeStyle(type) {
+      if (!type) return { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
+      const t = type.toLowerCase().trim();
+      if (t === 'n' || t.includes('noun') || t.includes('danh')) {
+        return { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe' }; // Danh từ: Indigo
+      }
+      if (t === 'v' || t.includes('verb') || t.includes('động')) {
+        return { bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0' }; // Động từ: Emerald
+      }
+      if (t === 'adj' || t.includes('adjective') || t.includes('tính')) {
+        return { bg: '#fffbeb', color: '#92400e', border: '#fde68a' }; // Tính từ: Amber
+      }
+      if (t === 'adv' || t.includes('adverb') || t.includes('phó') || t.includes('trạng')) {
+        return { bg: '#fdf2f8', color: '#9d174d', border: '#fbcfe8' }; // Phó từ: Pink
+      }
+      return { bg: '#f1f5f9', color: '#334155', border: '#e2e8f0' };
+    }
+
+    function handleCardImgError(imgEl) {
+      imgEl.style.display = 'none';
+      const fallback = document.getElementById('cardImgFallback');
+      if (fallback) {
+        fallback.style.display = 'flex';
+        const fallbackWord = document.getElementById('fallbackWord');
+        if (fallbackWord && currentStudyList[currentIndex]) {
+          fallbackWord.innerText = currentStudyList[currentIndex].word.word;
+        }
+      }
+    }
+
+    // Hiện đáp án âm tiết đục lỗ tại chỗ (In-place Cloze Reveal) - Không lật thẻ, giữ nguyên chữ viết tay trên Canvas!
+    function revealAnswer() {
+      if (!currentStudyList[currentIndex]) return;
+      isAnswerRevealed = true;
+      renderCardFace();
+    }
+
+    // Chạm vào thẻ để lật (Tap-to-Flip) - Tuyệt đối không xóa chữ trên bảng canvas!
+    function flipCard() {
+      if (!currentStudyList[currentIndex]) return;
+      isCardFlipped = !isCardFlipped;
+      renderCardFace();
+    }
+
+    function renderCardFace() {
+      const item = currentStudyList[currentIndex];
+      if (!item) return;
+      const { word, card } = item;
+
+      const cardFront = document.getElementById('cardFront');
+      const cardBack = document.getElementById('cardBack');
+      const cardFaceStatus = document.getElementById('cardFaceStatus');
+      const cardFlipHintText = document.getElementById('cardFlipHintText');
+      const btnRevealAnswer = document.getElementById('btnRevealAnswer');
+      const fsrsButtons = document.getElementById('fsrsButtons');
+
+      if (!isCardFlipped) {
+        // ==================== MẶT TRƯỚC (CÂU HỎI & GỢI NHỚ) ====================
+        cardFront.style.display = 'flex';
+        cardBack.style.display = 'none';
+        if (cardFaceStatus) cardFaceStatus.innerText = isAnswerRevealed ? 'Mặt trước (Đã hiện đáp án)' : 'Mặt trước (Gợi nhớ)';
+        if (cardFlipHintText) cardFlipHintText.innerText = 'Chạm để lật ↷';
+
+        // Điều khiển hiển thị: Nếu chưa hiện đáp án -> Nút "Hiện đáp án". Nếu đã hiện -> Cụm 4 nút FSRS
+        if (isAnswerRevealed) {
+          if (btnRevealAnswer) btnRevealAnswer.style.display = 'none';
+          if (fsrsButtons) fsrsButtons.style.display = 'grid';
+        } else {
+          if (btnRevealAnswer) btnRevealAnswer.style.display = 'flex';
+          if (fsrsButtons) fsrsButtons.style.display = 'none';
+        }
+
+        // 1. Badge Loại từ nổi bật
+        const badgeEl = document.getElementById('frontWordType');
+        if (badgeEl) {
+          badgeEl.innerText = formatCardType(word.type);
+          const style = getBadgeStyle(word.type);
+          badgeEl.style.backgroundColor = style.bg;
+          badgeEl.style.color = style.color;
+          badgeEl.style.borderColor = style.border;
+        }
+
+        // 2. Ảnh minh họa 2D vector hoạt hình
+        const imgEl = document.getElementById('cardImage');
+        const fallbackEl = document.getElementById('cardImgFallback');
+        const fallbackWord = document.getElementById('fallbackWord');
+        if (imgEl && fallbackEl) {
+          fallbackEl.style.display = 'none';
+          imgEl.style.display = 'block';
+          const imgPrompt = encodeURIComponent(word.word + ' cute minimal 2d flat vector cartoon illustration white background');
+          imgEl.src = `https://image.pollinations.ai/prompt/${imgPrompt}?width=400&height=300&nologo=true`;
+          if (fallbackWord) fallbackWord.innerText = word.word;
+        }
+
+        // 3. Hàng âm tiết đục lỗ (In-place reveal nếu isAnswerRevealed = true)
+        const chunksContainer = document.getElementById('chunksRow');
+        const frontMeaningRevealed = document.getElementById('frontMeaningRevealed');
+        if (chunksContainer) {
+          chunksContainer.innerHTML = '';
+          word.chunks.forEach((ch, idx) => {
+            if (idx === card.hiddenChunkIndex) {
+              if (isAnswerRevealed) {
+                chunksContainer.innerHTML += `<div class="chunk-revealed">${ch}</div>`;
+              } else {
+                chunksContainer.innerHTML += `<div class="chunk-hidden">?</div>`;
+              }
+            } else {
+              chunksContainer.innerHTML += `<span class="chunk-pill">${ch}</span>`;
+            }
+          });
+        }
+
+        // Hiện nghĩa tiếng Việt vắn tắt khi đã mở đáp án
+        if (frontMeaningRevealed) {
+          if (isAnswerRevealed && word.meaning) {
+            frontMeaningRevealed.innerText = word.meaning;
+            frontMeaningRevealed.style.display = 'block';
+          } else {
+            frontMeaningRevealed.style.display = 'none';
+          }
+        }
+
+        // 4. Phiên âm IPA
+        const ipaEl = document.getElementById('frontWordIPA');
+        if (ipaEl) ipaEl.innerText = word.ipa || '';
+      } else {
+        // ==================== MẶT SAU (LỜI GIẢI & ĐỐI CHIẾU) ====================
+        cardFront.style.display = 'none';
+        cardBack.style.display = 'flex';
+        if (cardFaceStatus) cardFaceStatus.innerText = 'Mặt sau (Đáp án)';
+        if (cardFlipHintText) cardFlipHintText.innerText = 'Chạm để úp ↺';
+
+        // Ẩn nút Hiện đáp án, hiện cụm 4 nút FSRS để đánh giá
+        if (btnRevealAnswer) btnRevealAnswer.style.display = 'none';
+        if (fsrsButtons) fsrsButtons.style.display = 'grid';
+
+        // 1. Định nghĩa tiếng Anh chuẩn Oxford
+        const oxfordBox = document.getElementById('backOxfordDefBox');
+        const oxfordLabel = document.getElementById('backOxfordDefLabel');
+        const oxfordText = document.getElementById('backOxfordDefText');
+        if (oxfordBox && oxfordText) {
+          const defContent = word.definition_en || word.meaning;
+          if (defContent) {
+            oxfordText.innerText = `"${defContent}"`;
+            if (oxfordLabel) oxfordLabel.innerText = word.definition_en ? 'Oxford Definition' : 'Definition';
+            oxfordBox.style.display = 'block';
+          } else {
+            oxfordBox.style.display = 'none';
+          }
+        }
+
+        // 2. Cụm từ đi kèm thông dụng (Collocations Chips)
+        const collocBox = document.getElementById('backCollocationsBox');
+        const collocList = document.getElementById('backCollocationsList');
+        if (collocBox && collocList) {
+          const collocations = Array.isArray(word.collocations) ? word.collocations : [];
+          if (collocations.length > 0) {
+            collocList.innerHTML = collocations
+              .map(c => `<span class="collocation-chip">${escapeHtml(c)}</span>`)
+              .join('');
+            collocBox.style.display = 'flex';
+          } else {
+            collocBox.style.display = 'none';
+          }
+        }
+
+        // 3. Ví dụ ngữ cảnh & Bản dịch câu
+        const exampleBox = document.getElementById('backExampleBox');
+        if (exampleBox) {
+          if (word.example || word.example_vi) {
+            exampleBox.style.display = 'block';
+            const exEl = document.getElementById('backWordExample');
+            if (exEl) exEl.innerText = word.example ? `• ${word.example}` : '';
+            const exViEl = document.getElementById('backWordExampleVi');
+            if (exViEl) exViEl.innerText = word.example_vi || '';
+          } else {
+            exampleBox.style.display = 'none';
+          }
+        }
+      }
+    }
+
+    async function loadStudySession(targetFolderId) {
+      if (targetFolderId !== undefined) {
+        activeFolderId = targetFolderId;
+      }
+
+      const allWords = await dbGetAll('words');
+      const allCards = await dbGetAll('flashcards');
+      const allFolders = await dbGetAll('folders');
+
+      const wordMap = new Map();
+      allWords.forEach(w => wordMap.set(w.id, w));
+
+      const now = Date.now();
+      let targetCards = [];
+
+      const studyFolderBanner = document.getElementById('studyFolderBanner');
+      const studyFolderName = document.getElementById('studyFolderName');
+
+      if (activeFolderId) {
+        const folder = allFolders.find(f => f.id === activeFolderId);
+        const fName = folder ? folder.name : 'Thư mục';
+        activeFolderName = fName;
+        if (studyFolderBanner) {
+          studyFolderBanner.style.display = 'flex';
+          if (studyFolderName) studyFolderName.innerText = `📁 ${fName}`;
+        }
+
+        const folderCards = allCards.filter(c => (c.folderId || DEFAULT_FOLDER_ID) === activeFolderId);
+        let dueInFolder = folderCards.filter(c => {
+          const cardDue = c.due ?? c.dueDate ?? 0;
+          const fsrs = ensureFSRSCard(c);
+          return cardDue <= now || fsrs.state === 0 || fsrs.state === 1 || fsrs.state === 3 || c.state === 'learning' || c.state === 'new';
+        });
+
+        // Fallback: nếu không có thẻ đến hạn trong thư mục, nạp tối đa 20 thẻ để luyện tập tự do
+        if (dueInFolder.length === 0 && folderCards.length > 0) {
+          dueInFolder = [...folderCards].sort((a, b) => {
+            const dueA = a.due ?? a.dueDate ?? 0;
+            const dueB = b.due ?? b.dueDate ?? 0;
+            return dueA - dueB;
+          }).slice(0, 20);
+        }
+        targetCards = dueInFolder;
+      } else {
+        // Global Due Queue: Gom toàn bộ thẻ đến hạn của mọi thư mục
+        activeFolderName = '';
+        if (studyFolderBanner) {
+          studyFolderBanner.style.display = 'none';
+        }
+        targetCards = allCards.filter(c => {
+          const cardDue = c.due ?? c.dueDate ?? 0;
+          const fsrs = ensureFSRSCard(c);
+          return cardDue <= now || fsrs.state === 0 || fsrs.state === 1 || fsrs.state === 3 || c.state === 'learning' || c.state === 'new';
+        });
+      }
+
+      targetCards.sort((a, b) => {
+        const fsrsA = ensureFSRSCard(a);
+        const fsrsB = ensureFSRSCard(b);
+        if ((fsrsA.state === 1 || fsrsA.state === 3) && fsrsB.state !== 1 && fsrsB.state !== 3) return -1;
+        if ((fsrsB.state === 1 || fsrsB.state === 3) && fsrsA.state !== 1 && fsrsA.state !== 3) return 1;
+        const dueA = a.due ?? a.dueDate ?? 0;
+        const dueB = b.due ?? b.dueDate ?? 0;
+        return dueA - dueB;
+      });
+
+      currentStudyList = targetCards.map(c => ({
+        card: {
+          ...c,
+          due: c.due ?? c.dueDate ?? now,
+          fsrsCard: ensureFSRSCard(c)
+        },
+        word: wordMap.get(c.wordId)
+      })).filter(item => !!item.word);
+
+      currentIndex = 0;
+      isCardFlipped = false;
+      isAnswerRevealed = false;
+      clearCanvas();
+
+      // Cập nhật trạng thái Header & Drawer
+      const totalGlobalDue = allCards.filter(c => {
+        const cardDue = c.due ?? c.dueDate ?? 0;
+        const fsrs = ensureFSRSCard(c);
+        return cardDue <= now || fsrs.state === 0 || fsrs.state === 1 || fsrs.state === 3 || c.state === 'learning' || c.state === 'new';
+      }).length;
+
+      const headerStatus = document.getElementById('headerStatus');
+      const headerStatusText = document.getElementById('headerStatusText');
+      const navDueBadge = document.getElementById('navDueBadge');
+
+      if (totalGlobalDue > 0) {
+        if (headerStatus) headerStatus.className = 'header-status status-due';
+        if (headerStatusText) headerStatusText.innerText = `${totalGlobalDue} cần ôn`;
+        if (navDueBadge) {
+          navDueBadge.innerText = totalGlobalDue;
+          navDueBadge.style.display = 'inline-block';
+        }
+      } else {
+        if (headerStatus) headerStatus.className = 'header-status status-done';
+        if (headerStatusText) headerStatusText.innerText = 'Đã xong';
+        if (navDueBadge) navDueBadge.style.display = 'none';
+      }
+
+      const navTotalWordsCount = document.getElementById('navTotalWordsCount');
+      if (navTotalWordsCount) navTotalWordsCount.innerText = `${allWords.length} từ`;
+      const navTotalCardsCount = document.getElementById('navTotalCardsCount');
+      if (navTotalCardsCount) navTotalCardsCount.innerText = `${allCards.length} thẻ`;
+      const navTotalFoldersCount = document.getElementById('navTotalFoldersCount');
+      if (navTotalFoldersCount) navTotalFoldersCount.innerText = `${allFolders.length} thư mục`;
+
+      renderCurrentCard();
+      renderStats(allWords, allCards);
+    }
+
+    function renderCurrentCard() {
+      isCardFlipped = false;
+      isAnswerRevealed = false;
+
+      const item = currentStudyList[currentIndex];
+      const cardCompletion = document.getElementById('cardCompletion');
+      const cardFront = document.getElementById('cardFront');
+      const cardBack = document.getElementById('cardBack');
+      const cardFaceStatus = document.getElementById('cardFaceStatus');
+      const cardFlipHintText = document.getElementById('cardFlipHintText');
+      const fsrsButtons = document.getElementById('fsrsButtons');
+
+      if (!item) {
+        clearCanvas();
+        document.getElementById('cardCounter').innerText = 'Hoàn thành';
+        if (cardFaceStatus) cardFaceStatus.innerText = 'Tuyệt vời';
+        if (cardFlipHintText) cardFlipHintText.innerText = '';
+        
+        if (cardFront) cardFront.style.display = 'none';
+        if (cardBack) cardBack.style.display = 'none';
+        if (cardCompletion) {
+          cardCompletion.style.display = 'flex';
+          const subEl = document.getElementById('completionSubtitle');
+          if (subEl) {
+            subEl.innerText = activeFolderId ? 'Không còn thẻ nào cần ôn trong thư mục này.' : 'Không còn thẻ nào cần ôn FSRS hôm nay.';
+          }
+          const switchBtn = document.getElementById('btnSwitchGlobalFromCompletion');
+          if (switchBtn) {
+            switchBtn.style.display = activeFolderId ? 'inline-block' : 'none';
+          }
+        }
+
+        const btnRevealAnswer = document.getElementById('btnRevealAnswer');
+        if (btnRevealAnswer) btnRevealAnswer.style.display = 'none';
+        if (fsrsButtons) fsrsButtons.style.display = 'none';
+        return;
+      }
+
+      if (cardCompletion) cardCompletion.style.display = 'none';
+
+      const { card } = item;
+      const fsrs = ensureFSRSCard(card);
+
+      document.getElementById('cardCounter').innerText = `Thẻ ${currentIndex + 1} / ${currentStudyList.length}`;
+      
+      if (fsrsButtons) {
+        fsrsButtons.style.opacity = '1';
+        fsrsButtons.style.pointerEvents = 'auto';
+      }
+
+      // Cập nhật nhãn thời gian dự kiến trên 4 nút FSRS
+      const intervals = getFSRSPreviewIntervals(fsrs, new Date());
+      document.getElementById('labelAgain').innerText = intervals.again.label;
+      document.getElementById('labelHard').innerText = intervals.hard.label;
+      document.getElementById('labelGood').innerText = intervals.good.label;
+      document.getElementById('labelEasy').innerText = intervals.easy.label;
+
+      // Hiển thị nội dung thẻ (mặc định mặt trước)
+      renderCardFace();
+
+      // TASK-PERF-AUDIO-ZERO-LATENCY: Preload ngay âm thanh thẻ hiện tại và thẻ tiếp theo (< 10ms)
+      if (item && item.word && item.word.word) {
+        soundEngine.preload(item.word.word, currentVoiceLang);
+      }
+      if (currentStudyList[currentIndex + 1] && currentStudyList[currentIndex + 1].word) {
+        soundEngine.preload(currentStudyList[currentIndex + 1].word.word, currentVoiceLang);
+      }
+
+      // TASK-AUDIO-FRONT-TRIGGER: Tự động phát âm từ vựng ngay khi thẻ mới xuất hiện ở Mặt Trước
+      speakCurrentWord();
+    }
+
+    // Đánh giá FSRS (Lại, Khó, Tốt, Dễ)
+    async function rateFSRS(rating) {
+      const item = currentStudyList[currentIndex];
+      if (!item) return;
+
+      const currentFSRS = ensureFSRSCard(item.card);
+      const updatedFSRS = simulateFSRSRating(currentFSRS, rating, new Date());
+
+      const nextDueTimestamp = updatedFSRS.due.getTime();
+      const updatedCard = {
+        ...item.card,
+        fsrsCard: updatedFSRS,
+        due: nextDueTimestamp,
+        dueDate: nextDueTimestamp
+      };
+
+      await dbPut('flashcards', updatedCard);
+
+      // 1. Tự động xóa chữ trên bảng canvas khi bấm 1 trong 4 nút FSRS
+      clearCanvas();
+
+      // 2. Luôn đặt lại Mặt Trước và trạng thái chưa hiện đáp án cho thẻ tiếp theo
+      isCardFlipped = false;
+      isAnswerRevealed = false;
+
+      // 3. Chuyển sang thẻ tiếp theo
+      if (currentIndex + 1 < currentStudyList.length) {
+        currentIndex++;
+        renderCurrentCard();
+      } else {
+        showToast('Chúc mừng bạn đã hoàn thành phiên học!');
+        await loadStudySession(activeFolderId);
+      }
+    }
+
+    async function speakCurrentWord(event) {
+      if (event && event.stopPropagation) {
+        event.stopPropagation(); // Không kích hoạt sự kiện lật thẻ khi bấm loa
+      }
+      const item = currentStudyList[currentIndex];
+      if (!item || !item.word || !item.word.word) return;
+
+      const btnAudio = document.getElementById('btnAudioPill');
+      if (btnAudio) btnAudio.classList.add('is-speaking');
+
+      try {
+        await soundEngine.playPronunciation(item.word.word, currentVoiceLang, currentSpeechRate);
+      } finally {
+        setTimeout(() => {
+          if (btnAudio) btnAudio.classList.remove('is-speaking');
+        }, 250);
+      }
+    }
+
+    // ==========================================
+    // 7. LIBRARY & BACKUP
+    // ==========================================
+    async function renderLibrary() {
+      const allWords = await dbGetAll('words');
+      const allCards = await dbGetAll('flashcards');
+      const allFolders = await dbGetAll('folders');
+      const folderMap = new Map();
+      allFolders.forEach(f => folderMap.set(f.id, f.name));
+
+      const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+
+      renderStats(allWords, allCards);
+
+      const filtered = allWords.filter(w =>
+        w.word.toLowerCase().includes(query) ||
+        (w.meaning && w.meaning.toLowerCase().includes(query))
+      );
+
+      const listEl = document.getElementById('wordsList');
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div style="text-align:center; padding:30px; color:#94a3b8; font-size:13px;">Chưa có từ vựng nào phù hợp.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(w => {
+        const wordCards = allCards.filter(c => c.wordId === w.id);
+        const dueCount = wordCards.filter(c => {
+          const d = c.due ?? c.dueDate ?? 0;
+          return d <= Date.now();
+        }).length;
+        const chunksHtml = w.chunks.map(ch => `<span style="background:#f1f5f9; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:700;">${ch}</span>`).join(' ');
+        const folderName = folderMap.get(w.folderId || DEFAULT_FOLDER_ID) || 'Thư mục mặc định';
+
+        return `
+          <div class="word-item-card">
+            <div class="word-item-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="word-item-title">${w.word}</span>
+                <button onclick="speakText('${w.word}')" style="border:none; background:none; cursor:pointer; color:#64748b;">🔊</button>
+                <span style="font-size:11px; font-family:monospace; color:#64748b;">${w.ipa || ''}</span>
+                <span class="word-type">${w.type || 'n'}</span>
+              </div>
+              <button class="btn-delete" onclick="deleteWord('${w.id}', '${w.word}')" title="Xóa từ">🗑️</button>
+            </div>
+            <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+              ${chunksHtml}
+              <span style="font-size:11px; color:#94a3b8;">(${w.chunks.length} thẻ)</span>
+              <span style="font-size:10px; background:#e0e7ff; color:#4338ca; padding:1px 6px; border-radius:4px; font-weight:600; margin-left:auto;">📁 ${escapeHtml(folderName)}</span>
+            </div>
+            <div style="font-size:12px; font-weight:600; color:#334155;">${escapeHtml(w.meaning || '')}</div>
+            ${w.definition_en ? `<div style="font-size:11px; color:#475569; font-style:italic;">"${escapeHtml(w.definition_en)}"</div>` : ''}
+            ${w.collocations && w.collocations.length > 0 ? `
+              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:2px;">
+                ${w.collocations.map(c => `<span style="font-size:10px; background:#fffbeb; color:#92400e; border:1px solid #fde68a; padding:1px 6px; border-radius:6px; font-weight:600;">${escapeHtml(c)}</span>`).join('')}
+              </div>
+            ` : ''}
+            <div style="font-size:11px; color:#94a3b8; font-style:italic;">"${escapeHtml(w.example || '')}"</div>
+            <div style="font-size:11px; color:${dueCount > 0 ? '#ef4444' : '#10b981'}; font-weight:600; border-top:1px solid #f1f5f9; padding-top:4px;">
+              ${dueCount > 0 ? `Cần ôn ${dueCount} thẻ hôm nay` : 'Đang trong chu kỳ FSRS'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStats(words, cards) {
+      document.getElementById('statTotalWords').innerText = `Tổng ${words.length} từ vựng`;
+      const now = Date.now();
+      let due = 0, learning = 0, reviewed = 0;
+      cards.forEach(c => {
+        const fsrs = ensureFSRSCard(c);
+        const cardDue = c.due ?? c.dueDate ?? 0;
+        if (cardDue <= now) due++;
+        if (fsrs.state === 1 || fsrs.state === 3 || c.state === 'learning') learning++;
+        else if (fsrs.state === 2 || c.state === 'review') reviewed++;
+      });
+      document.getElementById('statDue').innerText = due;
+      document.getElementById('statLearning').innerText = learning;
+      document.getElementById('statReviewed').innerText = reviewed;
+    }
+
+    function speakText(text) {
+      if (!text) return;
+      soundEngine.playPronunciation(text, currentVoiceLang, currentSpeechRate);
+    }
+
+    async function deleteWord(id, name) {
+      if (confirm(`Bạn có chắc muốn xóa từ "${name}" và toàn bộ thẻ ôn tập của từ này?`)) {
+        await dbDelete('words', id);
+        const cards = await dbGetAll('flashcards');
+        for (const c of cards) {
+          if (c.wordId === id) {
+            await dbDelete('flashcards', c.id);
+          }
+        }
+        showToast(`Đã xóa từ "${name}"`);
+        await loadStudySession(activeFolderId);
+        await renderLibrary();
+        await renderFoldersView();
+      }
+    }
+
+    async function exportBackup() {
+      const folders = await dbGetAll('folders');
+      const words = await dbGetAll('words');
+      const flashcards = await dbGetAll('flashcards');
+      const data = { version: 3, engine: 'FSRS', exportedAt: new Date().toISOString(), folders, words, flashcards };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `syllable_cloze_fsrs_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Đã tải xuống file sao lưu JSON!');
+    }
+
+    function importBackup(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data.words && data.flashcards) {
+            if (data.folders && Array.isArray(data.folders)) {
+              await dbBulkPut('folders', data.folders);
+            }
+            const migratedWords = data.words.map(w => ({
+              ...w,
+              folderId: w.folderId || DEFAULT_FOLDER_ID
+            }));
+            const migratedCards = data.flashcards.map(c => ({
+              ...c,
+              folderId: c.folderId || DEFAULT_FOLDER_ID,
+              due: c.due ?? c.dueDate ?? Date.now(),
+              fsrsCard: ensureFSRSCard(c)
+            }));
+            await dbBulkPut('words', migratedWords);
+            await dbBulkPut('flashcards', migratedCards);
+            showToast('Khôi phục dữ liệu FSRS thành công!');
+            await loadStudySession(activeFolderId);
+            await renderLibrary();
+            await renderFoldersView();
+          } else {
+            alert('Tệp không đúng định dạng!');
+          }
+        } catch (err) {
+          alert('Lỗi khi đọc file sao lưu: ' + err);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // ==========================================
+    // 8. AI SYNC MODAL & PROMPT LOGIC
+    // ==========================================
+    const PROMPT_TEMPLATE = `Bạn là một nhà từ điển học tiếng Anh chuyên về Oxford Advanced Learner's Dictionary và Oxford Collocations Dictionary.
+
+Nhiệm vụ: Phân tích danh sách từ vựng thành các thành phần ngôn ngữ chuẩn mực: âm tiết, loại từ, phiên âm IPA, định nghĩa tiếng Anh chuẩn từ điển, nghĩa tiếng Việt, 2-4 cụm từ đi chung thông dụng (Collocations), câu ví dụ và prompt tạo ảnh 2D.
+
+Quy tắc bắt buộc:
+1. Phân tách âm tiết (chunks): Theo đúng mục từ điển quốc tế (Oxford Hyphenation).
+   - "perseverance" -> ["per", "se", "ver", "ance"]
+   - "necessary" -> ["nec", "es", "sar", "y"]
+2. definition_en: Trích xuất định nghĩa tiếng Anh súc tích, chuẩn học thuật theo Oxford Advanced Learner's Dictionary.
+3. collocations: Trích xuất từ 2 đến 4 cụm kết hợp từ hay gặp nhất theo từ điển Oxford Collocations (gồm adj + noun, verb + noun, hoặc noun + verb).
+4. image_prompt: Tình huống cụ thể, kết thúc bằng "clean 2d vector cartoon, flat colors, white background".
+
+Chỉ trả về DUY NHẤT một khối JSON hợp lệ nằm trong thẻ \`\`\`json ... \`\`\`:
+[
+  {
+    "word": "perseverance",
+    "ipa": "/ˌpɜː.sɪˈvɪə.rəns/",
+    "type": "DANH TỪ",
+    "meaning": "sự kiên trì, bền bỉ",
+    "definition_en": "the quality of continuing to try to achieve a particular aim despite difficulties",
+    "collocations": [
+      "great perseverance",
+      "demonstrate perseverance",
+      "perseverance pays off"
+    ],
+    "chunks": ["per", "se", "ver", "ance"],
+    "image_prompt": "simple 2d cute cartoon illustration of a tiny turtle climbing a steep mountain, clean flat vector, white background",
+    "example": "They showed great perseverance in the face of difficulty.",
+    "example_vi": "Họ đã thể hiện sự kiên trì to lớn khi đối mặt với khó khăn."
+  }
+]
+
+Danh sách từ cần xử lý:
+{WORDS_INPUT}`;
+
+    function updatePromptPreview() {
+      const input = document.getElementById('wordsInput').value || '';
+      const clean = input.split(/[\n,;]+/).map(w => w.trim()).filter(Boolean).join(', ');
+      const p = PROMPT_TEMPLATE.replace('{WORDS_INPUT}', clean || 'imperative, communication, comfortable, necessary, perseverance');
+      document.getElementById('promptPreview').innerText = p;
+    }
+
+    async function openAISyncModal() {
+      updatePromptPreview();
+      await populateFolderSelect();
+      document.getElementById('aiError').style.display = 'none';
+      const newFolderBox = document.getElementById('modalNewFolderBox');
+      if (newFolderBox) newFolderBox.style.display = 'none';
+      document.getElementById('aiModal').style.display = 'flex';
+    }
+
+    function closeAISyncModal() {
+      document.getElementById('aiModal').style.display = 'none';
+    }
+
+    async function copyPrompt() {
+      const p = document.getElementById('promptPreview').innerText;
+      try {
+        await navigator.clipboard.writeText(p);
+      } catch (err) {
+        const ta = document.createElement('textarea');
+        ta.value = p;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      showToast('Đã sao chép Prompt vào bộ nhớ tạm!');
+    }
+
+    async function importAIResult() {
+      const text = document.getElementById('aiJsonInput').value.trim();
+      const errEl = document.getElementById('aiError');
+      errEl.style.display = 'none';
+
+      if (!text) {
+        errEl.innerText = 'Vui lòng dán kết quả JSON vào ô!';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const match = text.match(/\`\`\`(?:json)?\s*([\s\S]*?)\s*\`\`\`/i);
+        let target = match ? match[1].trim() : text;
+        if (!target.startsWith('[') && !target.startsWith('{')) {
+          const arrMatch = target.match(/(\[[\s\S]*\])/);
+          if (arrMatch) target = arrMatch[1].trim();
+        }
+        target = target.replace(/,\s*([\]}])/g, '$1');
+        const parsed = JSON.parse(target);
+        const list = Array.isArray(parsed) ? parsed : [parsed];
+
+        if (list.length === 0) throw new Error('Mảng từ vựng trống!');
+
+        const folderSelect = document.getElementById('aiFolderSelect');
+        const targetFolderId = folderSelect ? (folderSelect.value || DEFAULT_FOLDER_ID) : DEFAULT_FOLDER_ID;
+
+        let addedCards = 0;
+        for (let i = 0; i < list.length; i++) {
+          const item = list[i];
+          const wordId = 'w_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substr(2, 6);
+          const chunks = Array.isArray(item.chunks) && item.chunks.length > 0 ? item.chunks.map(c => String(c).trim()) : [String(item.word).trim()];
+          const collocations = Array.isArray(item.collocations)
+            ? item.collocations.map(c => String(c).trim()).filter(Boolean)
+            : [];
+
+          const wordItem = {
+            id: wordId,
+            word: String(item.word || '').trim(),
+            ipa: String(item.ipa || '').trim(),
+            type: String(item.type || 'n').trim(),
+            meaning: String(item.meaning || '').trim(),
+            definition_en: item.definition_en ? String(item.definition_en).trim() : '',
+            collocations: collocations,
+            chunks: chunks,
+            example: String(item.example || '').trim(),
+            example_vi: String(item.example_vi || '').trim(),
+            folderId: targetFolderId,
+            createdAt: Date.now()
+          };
+
+          const cards = createCardsForWord(wordId, chunks.length, targetFolderId);
+          await dbPut('words', wordItem);
+          await dbBulkPut('flashcards', cards);
+          addedCards += cards.length;
+        }
+
+        showToast(`Đã thêm ${list.length} từ và sinh ${addedCards} thẻ FSRS!`);
+        document.getElementById('aiJsonInput').value = '';
+        closeAISyncModal();
+        await loadStudySession(activeFolderId);
+        await renderLibrary();
+        await renderFoldersView();
+      } catch (err) {
+        errEl.innerText = 'Lỗi phân tích JSON: ' + err.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    // ==========================================
+    // 8B. SUPABASE AUTH & HYBRID CLOUD SYNC ENGINE (v0.9.1)
+    // ==========================================
+    let supabaseClient = null;
+    let currentUser = null;
+    let isAuthSignUp = false;
+
+    function getSupabaseConfig() {
+      const url = localStorage.getItem('syllable_supabase_url') || 'https://ntzvbriefngbajtcdgjv.supabase.co';
+      const key = localStorage.getItem('syllable_supabase_key') || 'sb_publishable_J5OWWlRdmwgsOjkpihaAJg_5T4kx_';
+      return { url, key };
+    }
+
+    function initSupabase() {
+      if (typeof window.supabase === 'undefined') {
+        console.warn('[Supabase] Thư viện Supabase JS chưa tải xong từ CDN.');
+        return;
+      }
+      const { url, key } = getSupabaseConfig();
+      if (!url || !key) {
+        console.info('[Supabase] Chưa cấu hình URL/Key. Vận hành ở chế độ Local Guest.');
+        updateAuthUI(null);
+        return;
+      }
+
+      try {
+        supabaseClient = window.supabase.createClient(url, key, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
+        });
+
+        // 1. Kiểm tra session hiện tại
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+          currentUser = session ? session.user : null;
+          updateAuthUI(currentUser);
+          if (currentUser) {
+            syncLocalDataToCloud(currentUser.id);
+          }
+        });
+
+        // 2. Lắng nghe thay đổi trạng thái
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+          currentUser = session ? session.user : null;
+          updateAuthUI(currentUser);
+          if (currentUser) {
+            syncLocalDataToCloud(currentUser.id);
+          }
+        });
+      } catch (err) {
+        console.error('[Supabase] Lỗi khởi tạo client:', err);
+      }
+    }
+
+    function updateAuthUI(user) {
+      const userBox = document.getElementById('drawerUserBox');
+      const btnOpenAuth = document.getElementById('btnOpenAuth');
+      const userAvatar = document.getElementById('drawerUserAvatar');
+      const userEmail = document.getElementById('drawerUserEmail');
+
+      if (user) {
+        if (userBox) userBox.style.display = 'block';
+        if (btnOpenAuth) btnOpenAuth.style.display = 'none';
+        if (userEmail) userEmail.innerText = user.email || 'Người dùng';
+        if (userAvatar) userAvatar.innerText = (user.email ? user.email[0] : 'U').toUpperCase();
+        closeAuthModal();
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+          setTimeout(() => {
+            try {
+              history.replaceState(null, '', window.location.pathname + window.location.search);
+            } catch (e) {}
+          }, 800);
+        }
+      } else {
+        if (userBox) userBox.style.display = 'none';
+        if (btnOpenAuth) btnOpenAuth.style.display = 'flex';
+      }
+    }
+
+    function openAuthModal() {
+      const modal = document.getElementById('authModal');
+      const { url, key } = getSupabaseConfig();
+      const cfgUrl = document.getElementById('cfgSupabaseUrl');
+      const cfgKey = document.getElementById('cfgSupabaseKey');
+      if (cfgUrl) cfgUrl.value = url;
+      if (cfgKey) cfgKey.value = key;
+
+      setAuthAlert(null);
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeAuthModal(e) {
+      if (e && e.target !== e.currentTarget && e.target.id !== 'authModal') return;
+      const modal = document.getElementById('authModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function toggleAuthMode() {
+      isAuthSignUp = !isAuthSignUp;
+      const title = document.getElementById('authModalTitle');
+      const btnSubmit = document.getElementById('btnSubmitAuth');
+      const btnToggle = document.getElementById('btnToggleAuthMode');
+      setAuthAlert(null);
+
+      if (isAuthSignUp) {
+        if (title) title.innerText = 'Tạo tài khoản mới';
+        if (btnSubmit) btnSubmit.innerText = 'Đăng ký tài khoản';
+        if (btnToggle) btnToggle.innerText = 'Đã có tài khoản? Đăng nhập ngay';
+      } else {
+        if (title) title.innerText = 'Đăng nhập SyllableCloze';
+        if (btnSubmit) btnSubmit.innerText = 'Đăng nhập';
+        if (btnToggle) btnToggle.innerText = 'Chưa có tài khoản? Đăng ký ngay';
+      }
+    }
+
+    function toggleSupabaseConfigBox() {
+      const box = document.getElementById('supabaseConfigBox');
+      if (box) {
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    function saveSupabaseConfig() {
+      const url = (document.getElementById('cfgSupabaseUrl')?.value || '').trim();
+      const key = (document.getElementById('cfgSupabaseKey')?.value || '').trim();
+      if (!url || !key) {
+        setAuthAlert('Vui lòng nhập cả Supabase URL và Anon Key!', 'error');
+        return;
+      }
+      localStorage.setItem('syllable_supabase_url', url);
+      localStorage.setItem('syllable_supabase_key', key);
+      initSupabase();
+      setAuthAlert('Đã lưu cấu hình Supabase thành công!', 'success');
+      showToast('Đã lưu cấu hình Supabase!');
+    }
+
+    function setAuthAlert(msg, type = 'error') {
+      const alertEl = document.getElementById('authAlert');
+      if (!alertEl) return;
+      if (!msg) {
+        alertEl.style.display = 'none';
+        return;
+      }
+      alertEl.style.display = 'block';
+      alertEl.innerText = msg;
+      if (type === 'error') {
+        alertEl.style.background = '#fee2e2';
+        alertEl.style.color = '#dc2626';
+        alertEl.style.border = '1px solid #fca5a5';
+      } else {
+        alertEl.style.background = '#ecfdf5';
+        alertEl.style.color = '#059669';
+        alertEl.style.border = '1px solid #a7f3d0';
+      }
+    }
+
+    async function handleGoogleSignIn() {
+      if (!supabaseClient) {
+        toggleSupabaseConfigBox();
+        setAuthAlert('Vui lòng cấu hình Supabase URL & Anon Key ở mục cài đặt bên dưới trước khi đăng nhập Google!', 'error');
+        return;
+      }
+      try {
+        setAuthAlert(null);
+        const currentOrigin =
+          window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')
+            ? window.location.origin
+            : 'http://localhost:5173';
+
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: currentOrigin,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent'
+            }
+          }
+        });
+        if (error) throw error;
+      } catch (err) {
+        setAuthAlert(err.message || 'Lỗi khi đăng nhập bằng Google.', 'error');
+      }
+    }
+
+    async function handleEmailAuthSubmit(e) {
+      if (e) e.preventDefault();
+      if (!supabaseClient) {
+        toggleSupabaseConfigBox();
+        setAuthAlert('Vui lòng cấu hình Supabase URL & Anon Key ở mục cài đặt bên dưới trước!', 'error');
+        return;
+      }
+
+      const email = (document.getElementById('authEmailInput')?.value || '').trim();
+      const pass = (document.getElementById('authPasswordInput')?.value || '').trim();
+      const btnSubmit = document.getElementById('btnSubmitAuth');
+      if (btnSubmit) btnSubmit.disabled = true;
+
+      try {
+        setAuthAlert(null);
+        if (isAuthSignUp) {
+          const { error } = await supabaseClient.auth.signUp({ email, password: pass });
+          if (error) throw error;
+          setAuthAlert('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.', 'success');
+        } else {
+          const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+          if (error) throw error;
+          showToast('Đăng nhập thành công!');
+          closeAuthModal();
+        }
+      } catch (err) {
+        setAuthAlert(err.message || 'Lỗi xác thực email/mật khẩu.', 'error');
+      } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+      }
+    }
+
+    async function handleSignOut() {
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+      currentUser = null;
+      updateAuthUI(null);
+      showToast('Đã đăng xuất khỏi Cloud.');
+    }
+
+    // Đồng bộ 2 chiều dữ liệu giữa IndexedDB và Supabase Cloud
+    async function syncLocalDataToCloud(userId) {
+      if (!supabaseClient || !userId) return;
+      try {
+        console.log('[SyncService] Đồng bộ dữ liệu lên Supabase...');
+
+        // 1. Đẩy Folders
+        const localFolders = await dbGetAll('folders');
+        for (const f of localFolders) {
+          await supabaseClient.from('folders').upsert({
+            id: f.id,
+            user_id: userId,
+            name: f.name,
+            color: f.color || '#4f46e5',
+            icon: f.icon || 'Folder',
+            created_at: new Date(f.createdAt || Date.now()).toISOString(),
+            updated_at: new Date(f.updatedAt || Date.now()).toISOString()
+          });
+        }
+
+        // 2. Đẩy Words
+        const localWords = await dbGetAll('words');
+        for (const w of localWords) {
+          await supabaseClient.from('words').upsert({
+            id: w.id,
+            user_id: userId,
+            folder_id: w.folderId || DEFAULT_FOLDER_ID,
+            word: w.word,
+            ipa: w.ipa || '',
+            type: w.type || 'n',
+            meaning: w.meaning,
+            definition_en: w.definition_en || '',
+            collocations: w.collocations || [],
+            chunks: w.chunks,
+            example: w.example || '',
+            example_vi: w.example_vi || '',
+            created_at: new Date(w.createdAt || Date.now()).toISOString(),
+            updated_at: new Date(w.updatedAt || Date.now()).toISOString()
+          });
+        }
+
+        // 3. Đẩy Flashcards (FSRS State)
+        const localCards = await dbGetAll('flashcards');
+        for (const c of localCards) {
+          const fsrs = ensureFSRSCard(c);
+          await supabaseClient.from('flashcards').upsert({
+            id: c.id,
+            user_id: userId,
+            word_id: c.wordId,
+            folder_id: c.folderId || DEFAULT_FOLDER_ID,
+            hidden_chunk_index: c.hiddenChunkIndex,
+            due: new Date(c.due || c.dueDate || Date.now()).toISOString(),
+            fsrs_card: fsrs,
+            updated_at: new Date(c.updatedAt || Date.now()).toISOString()
+          });
+        }
+
+        // 4. Kéo Folders, Words, Flashcards từ Cloud về Local nếu có dữ liệu mới
+        const { data: cloudFolders } = await supabaseClient.from('folders').select('*').eq('user_id', userId);
+        if (cloudFolders && cloudFolders.length > 0) {
+          for (const cf of cloudFolders) {
+            await dbPut('folders', {
+              id: cf.id,
+              name: cf.name,
+              color: cf.color,
+              icon: cf.icon,
+              createdAt: new Date(cf.created_at).getTime(),
+              updatedAt: new Date(cf.updated_at).getTime()
+            });
+          }
+        }
+
+        const { data: cloudWords } = await supabaseClient.from('words').select('*').eq('user_id', userId);
+        if (cloudWords && cloudWords.length > 0) {
+          for (const cw of cloudWords) {
+            await dbPut('words', {
+              id: cw.id,
+              folderId: cw.folder_id,
+              word: cw.word,
+              ipa: cw.ipa,
+              type: cw.type,
+              meaning: cw.meaning,
+              definition_en: cw.definition_en,
+              collocations: cw.collocations,
+              chunks: cw.chunks,
+              example: cw.example,
+              example_vi: cw.example_vi,
+              createdAt: new Date(cw.created_at).getTime(),
+              updatedAt: new Date(cw.updated_at).getTime()
+            });
+          }
+        }
+
+        const { data: cloudCards } = await supabaseClient.from('flashcards').select('*').eq('user_id', userId);
+        if (cloudCards && cloudCards.length > 0) {
+          for (const cc of cloudCards) {
+            const dueMs = new Date(cc.due).getTime();
+            await dbPut('flashcards', {
+              id: cc.id,
+              wordId: cc.word_id,
+              folderId: cc.folder_id,
+              hiddenChunkIndex: cc.hidden_chunk_index,
+              due: dueMs,
+              dueDate: dueMs,
+              fsrsCard: cc.fsrs_card,
+              updatedAt: new Date(cc.updated_at).getTime()
+            });
+          }
+        }
+
+        showToast('Đã đồng bộ dữ liệu đám mây thành công!');
+        await loadStudySession(activeFolderId);
+        await renderFoldersView();
+      } catch (err) {
+        console.error('[SyncService] Lỗi khi đồng bộ dữ liệu Cloud:', err);
+      }
+    }
+
+    // ==========================================
+    // 9. VIEW SWITCHING & TOAST NOTIFICATION
+    // ==========================================
+    function switchTab(tab) {
+      const navStudy = document.getElementById('navStudy');
+      const navLibrary = document.getElementById('navLibrary');
+      const navFolders = document.getElementById('navFolders');
+      const navStats = document.getElementById('navStats');
+
+      const studyView = document.getElementById('studyView');
+      const libraryView = document.getElementById('libraryView');
+      const foldersView = document.getElementById('foldersView');
+
+      studyView.style.display = 'none';
+      libraryView.style.display = 'none';
+      if (foldersView) foldersView.style.display = 'none';
+
+      if (navStudy) navStudy.classList.remove('active');
+      if (navLibrary) navLibrary.classList.remove('active');
+      if (navFolders) navFolders.classList.remove('active');
+      if (navStats) navStats.classList.remove('active');
+
+      if (tab === 'study') {
+        studyView.style.display = 'flex';
+        if (navStudy) navStudy.classList.add('active');
+        setupCanvasSize();
+      } else if (tab === 'folders') {
+        if (foldersView) foldersView.style.display = 'flex';
+        if (navFolders) navFolders.classList.add('active');
+        renderFoldersView();
+      } else {
+        libraryView.style.display = 'flex';
+        if (navLibrary) navLibrary.classList.add('active');
+        renderLibrary();
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.style.display = 'block';
+      setTimeout(() => {
+        t.style.display = 'none';
+      }, 2600);
+    }
+
+    // ==========================================
+    // 10. APP INITIALIZATION
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      initCanvas();
+      await initSeedData();
+      await loadStudySession();
+      await renderFoldersView();
+      initSupabase();
+    });
+  </script>
+</body>
+</html>

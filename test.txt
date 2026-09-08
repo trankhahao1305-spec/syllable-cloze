@@ -1,0 +1,2 @@
+SyllableCloze PWA Project initialized successfully.
+Please refer to README.md and index.html.

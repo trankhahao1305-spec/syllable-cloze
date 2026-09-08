@@ -1,0 +1,18 @@
+{
+  "name": "SyllableCloze - Học Từ Vựng Tiếng Anh Chuẩn Âm Tiết & SRS",
+  "short_name": "SyllableCloze",
+  "description": "Ứng dụng học từ vựng tiếng Anh theo phương pháp đục lỗ âm tiết chuẩn từ điển, lặp lại ngắt quãng SRS và viết tay cảm ứng.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

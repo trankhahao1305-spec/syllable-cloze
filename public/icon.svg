@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="url(#grad)" />
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4f46e5" />
+      <stop offset="1" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <!-- Book / Syllable Symbol -->
+  <path d="M128 176C128 158.327 142.327 144 160 144H352C369.673 144 384 158.327 384 176V352C384 369.673 369.673 384 352 384H160C142.327 384 128 369.673 128 352V176Z" fill="white" fill-opacity="0.15" />
+  <text x="256" y="300" text-anchor="middle" fill="#ffffff" font-family="-apple-system, sans-serif" font-weight="900" font-size="140" letter-spacing="-4">Syll</text>
+  <circle cx="360" cy="180" r="28" fill="#38bdf8" />
+</svg>
