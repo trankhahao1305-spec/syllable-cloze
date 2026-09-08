@@ -3380,7 +3380,7 @@ Danh sách từ cần xử lý:
       try {
         supabaseClient = window.supabase.createClient(url, key, {
           auth: {
-            flowType: 'pkce',
+            flowType: 'implicit',
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true
@@ -3414,12 +3414,24 @@ Danh sách từ cần xử lý:
             history.replaceState(null, '', window.location.pathname);
           } catch (e) {}
         } else {
-          // Xóa các tham số code trên URL nếu có để thanh địa chỉ luôn sạch
-          const searchParams = new URLSearchParams(window.location.search);
-          if (searchParams.get('code') || searchParams.get('error')) {
+          // Xóa các tham số lỗi hoặc code cũ trên URL nếu có
+          if (window.location.hash && window.location.hash.includes('error=')) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const errorDesc = hashParams.get('error_description') || hashParams.get('error');
+            if (errorDesc) {
+              console.warn('[Supabase Auth Hash Error]:', errorDesc);
+              showToast('Lỗi xác thực: ' + decodeURIComponent(errorDesc.replace(/\+/g, ' ')));
+            }
             try {
               history.replaceState(null, '', window.location.pathname);
             } catch (e) {}
+          } else {
+            const searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.get('code') || searchParams.get('error')) {
+              try {
+                history.replaceState(null, '', window.location.pathname);
+              } catch (e) {}
+            }
           }
         }
       } catch (err) {
