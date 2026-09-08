@@ -1,5 +1,5 @@
 // src/services/syncService.ts
-import { db, DEFAULT_FOLDER_ID, DEFAULT_FOLDER_NAME, ensureFSRSCard } from '../db';
+import { db, DEFAULT_FOLDER_ID, ensureFSRSCard } from '../db';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { FolderItem, WordItem, Flashcard } from '../types';
 

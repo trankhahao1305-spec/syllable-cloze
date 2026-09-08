@@ -9,11 +9,9 @@ import {
   Download,
   Upload,
   Settings,
-  Volume2,
   Folder,
   Cloud,
-  LogOut,
-  User as UserIcon
+  LogOut
 } from 'lucide-react';
 import { DeckStats } from '../types';
 import { useAuth } from '../context/AuthContext';

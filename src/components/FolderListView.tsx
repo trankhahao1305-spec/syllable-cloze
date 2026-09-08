@@ -18,8 +18,7 @@ const PRESET_COLORS = [
 ];
 
 export const FolderListView: React.FC<FolderListViewProps> = ({
-  onStartStudy,
-  onOpenAISync
+  onStartStudy
 }) => {
   const [folders, setFolders] = useState<FolderWithStats[]>([]);
   const [totalDue, setTotalDue] = useState<number>(0);

@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl =
-  import.meta.env?.VITE_SUPABASE_URL || 'https://ntzvbriefngbajtcdgjv.supabase.co';
+  (import.meta as any).env?.VITE_SUPABASE_URL || 'https://ntzvbriefngbajtcdgjv.supabase.co';
 const supabaseAnonKey =
-  import.meta.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_J5OWWlRdmwgsOjkpihaAJg_5T4kx_';
+  (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_J5OWWlRdmwgsOjkpihaAJg_5T4kx_';
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 

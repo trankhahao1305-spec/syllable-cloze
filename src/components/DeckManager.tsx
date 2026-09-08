@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { WordItem, Flashcard, DeckStats } from '../types';
 import { db, deleteWord } from '../db';
 import { soundEngine } from '../services/audioService';
@@ -90,20 +91,20 @@ export const DeckManager: React.FC<DeckManagerProps> = ({
     e.target.value = '';
   };
 
-  const filteredWords = words.filter(w => {
+  const filteredWords = words.filter((w: WordItem) => {
     const matchQuery = w.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
       w.meaning.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (!matchQuery) return false;
 
     if (filterState === 'due') {
-      const wordCards = cards.filter(c => c.wordId === w.id);
-      return wordCards.some(c => (c.due ?? c.dueDate ?? 0) <= Date.now());
+      const wordCards = cards.filter((c: Flashcard) => c.wordId === w.id);
+      return wordCards.some((c: Flashcard) => (c.due ?? c.dueDate ?? 0) <= Date.now());
     }
 
     if (filterState === 'new') {
-      const wordCards = cards.filter(c => c.wordId === w.id);
-      return wordCards.some(c => c.state === 'new' || c.fsrsCard?.state === 0);
+      const wordCards = cards.filter((c: Flashcard) => c.wordId === w.id);
+      return wordCards.some((c: Flashcard) => c.state === 'new' || c.fsrsCard?.state === 0);
     }
 
     return true;
@@ -194,9 +195,9 @@ export const DeckManager: React.FC<DeckManagerProps> = ({
             </button>
           </div>
         ) : (
-          filteredWords.map((w) => {
-            const wordCards = cards.filter(c => c.wordId === w.id);
-            const dueCount = wordCards.filter(c => (c.due ?? c.dueDate ?? 0) <= Date.now()).length;
+          filteredWords.map((w: WordItem) => {
+            const wordCards = cards.filter((c: Flashcard) => c.wordId === w.id);
+            const dueCount = wordCards.filter((c: Flashcard) => (c.due ?? c.dueDate ?? 0) <= Date.now()).length;
 
             return (
               <div
@@ -230,7 +231,7 @@ export const DeckManager: React.FC<DeckManagerProps> = ({
 
                 {/* Âm tiết */}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {w.chunks.map((chunk, idx) => (
+                  {w.chunks.map((chunk: string, idx: number) => (
                     <span
                       key={idx}
                       className="px-2 py-0.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg"

@@ -71,7 +71,7 @@ export class SRSService {
     };
 
     const targetRating = ratingMap[rating];
-    const scheduling = f.repeat(card, now);
+    const scheduling = f.repeat(card, now) as any;
     return scheduling[targetRating].card;
   }
 }

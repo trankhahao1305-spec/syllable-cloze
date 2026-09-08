@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, BookOpen, Layers, Volume2 } from 'lucide-react';
+import { Sparkles, BookOpen, Layers } from 'lucide-react';
 import { DeckStats } from '../types';
 
 interface HeaderProps {
