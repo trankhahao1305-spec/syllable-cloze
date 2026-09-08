@@ -1178,10 +1178,16 @@
         </div>
       </button>
 
-      <!-- Bên phải: Trạng thái tối giản -->
-      <div id="headerStatus" class="header-status status-done">
-        <span class="dot-pulse"></span>
-        <span id="headerStatusText">Đã xong</span>
+      <!-- Bên phải: Trạng thái tối giản & Avatar người dùng -->
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div id="headerStatus" class="header-status status-done">
+          <span class="dot-pulse"></span>
+          <span id="headerStatusText">Đã xong</span>
+        </div>
+        <div id="headerUserAvatarWrap" style="display:none; cursor:pointer; align-items:center;" onclick="openDrawer()" title="Hồ sơ tài khoản Google">
+          <img id="headerUserAvatarImg" src="" alt="Avatar" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:2px solid #4f46e5; display:none;" referrerpolicy="no-referrer" />
+          <div id="headerUserAvatarTxt" style="width:28px; height:28px; border-radius:50%; background:#4f46e5; color:white; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center;">U</div>
+        </div>
       </div>
     </header>
 
@@ -1292,20 +1298,22 @@
       <!-- 4. Chân Trang Drawer (Footer Menu) -->
       <div class="drawer-footer">
         <!-- Khối Thông Tin Tài Khoản Khi Đã Đăng Nhập -->
-        <div id="drawerUserBox" style="display:none; padding:10px; background:#f8fafc; border-radius:14px; border:1px solid #e2e8f0; margin-bottom:8px;">
+        <div id="drawerUserBox" style="display:none; padding:10px 12px; background:#f8fafc; border-radius:14px; border:1px solid #e2e8f0; margin-bottom:8px;">
           <div style="display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-              <div id="drawerUserAvatar" style="width:28px; height:28px; border-radius:50%; background:#4f46e5; color:white; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">U</div>
+            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+              <img id="drawerUserAvatarImg" src="" alt="Avatar" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid #c7d2fe; display:none; flex-shrink:0;" referrerpolicy="no-referrer" />
+              <div id="drawerUserAvatar" style="width:34px; height:34px; border-radius:50%; background:#4f46e5; color:white; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">U</div>
               <div style="min-width:0;">
-                <div id="drawerUserEmail" style="font-size:11px; font-weight:700; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;">user@example.com</div>
-                <div style="font-size:10px; color:#10b981; font-weight:600; display:flex; align-items:center; gap:3px;">
+                <div id="drawerUserName" style="font-size:12px; font-weight:800; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;">Tên người dùng</div>
+                <div id="drawerUserEmail" style="font-size:10px; font-weight:600; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;">user@example.com</div>
+                <div style="font-size:9px; color:#10b981; font-weight:700; display:flex; align-items:center; gap:3px; margin-top:2px;">
                   <span style="width:5px; height:5px; border-radius:50%; background:#10b981;"></span>
-                  <span>Đã liên kết Cloud</span>
+                  <span>Đã liên kết Google Cloud</span>
                 </div>
               </div>
             </div>
-            <button onclick="handleSignOut()" title="Đăng xuất" style="border:none; background:none; cursor:pointer; color:#94a3b8; padding:4px; border-radius:6px;">
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <button onclick="handleSignOut()" title="Đăng xuất" style="border:none; background:none; cursor:pointer; color:#94a3b8; padding:6px; border-radius:8px;">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             </button>
           </div>
         </div>
@@ -3357,7 +3365,7 @@ Danh sách từ cần xử lý:
       return { url, key };
     }
 
-    function initSupabase() {
+    async function initSupabase() {
       if (typeof window.supabase === 'undefined') {
         console.warn('[Supabase] Thư viện Supabase JS chưa tải xong từ CDN.');
         return;
@@ -3372,23 +3380,61 @@ Danh sách từ cần xử lý:
       try {
         supabaseClient = window.supabase.createClient(url, key, {
           auth: {
+            flowType: 'pkce',
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true
           }
         });
 
-        // 1. Kiểm tra session hiện tại
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-          currentUser = session ? session.user : null;
-          updateAuthUI(currentUser);
-          if (currentUser) {
-            syncLocalDataToCloud(currentUser.id);
-          }
-        });
+        // 1. Kiểm tra tham số URL từ Google OAuth Callback (?code= hoặc #access_token=)
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(
+          window.location.hash.startsWith('#')
+            ? window.location.hash.substring(1)
+            : window.location.hash
+        );
 
-        // 2. Lắng nghe thay đổi trạng thái
-        supabaseClient.auth.onAuthStateChange((_event, session) => {
+        const code = searchParams.get('code') || hashParams.get('code');
+        const error = searchParams.get('error') || hashParams.get('error');
+        const errorDesc = searchParams.get('error_description') || hashParams.get('error_description');
+
+        if (error) {
+          console.error('[Supabase OAuth Error]:', error, errorDesc);
+          alert('Lỗi đăng nhập Google: ' + (errorDesc || error));
+        }
+
+        if (code) {
+          console.log('[Supabase Auth] Phát hiện auth code từ Google, đang đổi session...');
+          showToast('Đang kết nối tài khoản Google...');
+          const { data, error: exchangeError } = await supabaseClient.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('[Supabase Auth] Lỗi exchangeCodeForSession:', exchangeError);
+            alert('Không thể hoàn tất đăng nhập Google: ' + exchangeError.message);
+          } else if (data && data.session) {
+            console.log('[Supabase Auth] Đăng nhập Google thành công:', data.session.user);
+            currentUser = data.session.user;
+            updateAuthUI(currentUser);
+            syncLocalDataToCloud(currentUser.id);
+            try {
+              history.replaceState(null, '', window.location.pathname);
+            } catch (e) {}
+            showToast('Đăng nhập Google thành công!');
+            return;
+          }
+        }
+
+        // 2. Lấy session hiện tại đã lưu trong localStorage
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        currentUser = session ? session.user : null;
+        updateAuthUI(currentUser);
+        if (currentUser) {
+          syncLocalDataToCloud(currentUser.id);
+        }
+
+        // 3. Lắng nghe thay đổi trạng thái đăng nhập
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          console.log('[Supabase Auth Event]:', event, session?.user?.email);
           currentUser = session ? session.user : null;
           updateAuthUI(currentUser);
           if (currentUser) {
@@ -3404,24 +3450,57 @@ Danh sách từ cần xử lý:
       const userBox = document.getElementById('drawerUserBox');
       const btnOpenAuth = document.getElementById('btnOpenAuth');
       const userAvatar = document.getElementById('drawerUserAvatar');
+      const userAvatarImg = document.getElementById('drawerUserAvatarImg');
+      const userName = document.getElementById('drawerUserName');
       const userEmail = document.getElementById('drawerUserEmail');
+      const headerAvatarWrap = document.getElementById('headerUserAvatarWrap');
+      const headerAvatarImg = document.getElementById('headerUserAvatarImg');
+      const headerAvatarTxt = document.getElementById('headerUserAvatarTxt');
 
       if (user) {
+        const meta = user.user_metadata || {};
+        const fullName = meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : 'Người dùng');
+        const photoUrl = meta.avatar_url || meta.picture || '';
+
         if (userBox) userBox.style.display = 'block';
         if (btnOpenAuth) btnOpenAuth.style.display = 'none';
-        if (userEmail) userEmail.innerText = user.email || 'Người dùng';
-        if (userAvatar) userAvatar.innerText = (user.email ? user.email[0] : 'U').toUpperCase();
-        closeAuthModal();
-        if (window.location.hash && window.location.hash.includes('access_token')) {
-          setTimeout(() => {
-            try {
-              history.replaceState(null, '', window.location.pathname + window.location.search);
-            } catch (e) {}
-          }, 800);
+
+        if (userName) userName.innerText = fullName;
+        if (userEmail) userEmail.innerText = user.email || '';
+
+        if (photoUrl) {
+          if (userAvatarImg) {
+            userAvatarImg.src = photoUrl;
+            userAvatarImg.style.display = 'block';
+          }
+          if (userAvatar) userAvatar.style.display = 'none';
+        } else {
+          if (userAvatarImg) userAvatarImg.style.display = 'none';
+          if (userAvatar) {
+            userAvatar.style.display = 'flex';
+            userAvatar.innerText = fullName[0].toUpperCase();
+          }
         }
+
+        // Cập nhật Avatar trên thanh Header chính
+        if (headerAvatarWrap) {
+          headerAvatarWrap.style.display = 'flex';
+          if (photoUrl && headerAvatarImg) {
+            headerAvatarImg.src = photoUrl;
+            headerAvatarImg.style.display = 'block';
+            if (headerAvatarTxt) headerAvatarTxt.style.display = 'none';
+          } else if (headerAvatarTxt) {
+            headerAvatarTxt.style.display = 'flex';
+            headerAvatarTxt.innerText = fullName[0].toUpperCase();
+            if (headerAvatarImg) headerAvatarImg.style.display = 'none';
+          }
+        }
+
+        closeAuthModal();
       } else {
         if (userBox) userBox.style.display = 'none';
         if (btnOpenAuth) btnOpenAuth.style.display = 'flex';
+        if (headerAvatarWrap) headerAvatarWrap.style.display = 'none';
       }
     }
 
@@ -3744,7 +3823,13 @@ Danh sách từ cần xử lý:
       await initSeedData();
       await loadStudySession();
       await renderFoldersView();
-      initSupabase();
+      await initSupabase();
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+          reg.update();
+        }).catch(() => {});
+      }
     });
   </script>
 </body>
