@@ -66,7 +66,7 @@ export const NavigationDrawer: React.FC<SidebarProps> = ({
           <Menu className="w-4 h-4 text-slate-500 ml-0.5" />
         </button>
 
-        {/* Bên phải: Trạng thái thẻ cần ôn & nút phát âm nhanh */}
+        {/* Bên phải: Trạng thái thẻ cần ôn & Avatar tài khoản */}
         <div className="flex items-center gap-2">
           {stats.dueCards > 0 ? (
             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-100 rounded-full">
@@ -78,6 +78,37 @@ export const NavigationDrawer: React.FC<SidebarProps> = ({
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span className="text-xs font-semibold text-emerald-600">Đã xong</span>
             </div>
+          )}
+
+          {user ? (
+            <button
+              onClick={() => setIsOpen(true)}
+              className="flex items-center gap-1 p-0.5 rounded-full hover:ring-2 hover:ring-indigo-400 transition"
+              title={user.user_metadata?.full_name || user.email || 'Tài khoản'}
+            >
+              {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                <img
+                  src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                  alt={user.user_metadata?.full_name || 'Avatar'}
+                  className="w-8 h-8 rounded-full object-cover border-2 border-indigo-500 shadow-xs"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                  {(user.user_metadata?.full_name || user.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (onOpenAuth) onOpenAuth();
+              }}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
+              title="Đăng nhập / Đồng bộ Cloud"
+            >
+              <Cloud className="w-5 h-5" />
+            </button>
           )}
         </div>
       </header>
@@ -245,29 +276,42 @@ export const NavigationDrawer: React.FC<SidebarProps> = ({
         <div className="p-3 border-t border-slate-100 space-y-2 bg-slate-50/50">
           {/* Khu vực Tài khoản / Xác thực */}
           {user ? (
-            <div className="p-2.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+            <div className="p-3 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs flex items-center justify-center shrink-0">
-                    {user.email ? user.email[0].toUpperCase() : 'U'}
-                  </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                    <img
+                      src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                      alt={user.user_metadata?.full_name || 'Avatar'}
+                      className="w-9 h-9 rounded-full object-cover border-2 border-indigo-200 shrink-0 shadow-xs"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                      {(user.user_metadata?.full_name || user.email || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold text-slate-800 truncate" title={user.email}>
+                    <p className="text-xs font-bold text-slate-800 truncate leading-tight">
+                      {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]}
+                    </p>
+                    <p className="text-[10px] text-slate-400 truncate leading-tight mt-0.5" title={user.email}>
                       {user.email}
                     </p>
-                    <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      <span>Đã liên kết Cloud</span>
-                    </div>
                   </div>
                 </div>
                 <button
                   onClick={() => signOut()}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0"
                   title="Đăng xuất"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-xl border border-emerald-100 text-[10px] text-emerald-700 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                <span>Đã kết nối Google Cloud Sync</span>
               </div>
             </div>
           ) : (

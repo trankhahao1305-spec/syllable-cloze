@@ -27,20 +27,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // 1. Kiểm tra session hiện tại
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (session?.user) {
-        syncLocalDataToCloud(session.user.id);
-      }
-    });
+    const initAuth = async () => {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(
+          window.location.hash.startsWith('#')
+            ? window.location.hash.substring(1)
+            : window.location.hash
+        );
 
-    // 2. Lắng nghe thay đổi trạng thái đăng nhập
+        const code = searchParams.get('code') || hashParams.get('code');
+        const error = searchParams.get('error') || hashParams.get('error');
+        const errorDesc = searchParams.get('error_description') || hashParams.get('error_description');
+
+        if (error) {
+          console.error('[Supabase Auth Redirect Error]:', error, errorDesc);
+          alert(`Đăng nhập không thành công: ${errorDesc || error}`);
+        }
+
+        if (code) {
+          console.log('[Supabase Auth] Phát hiện auth code trong URL, đang đổi session...');
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('[Supabase Auth] Lỗi exchangeCodeForSession:', exchangeError.message);
+          } else if (data.session) {
+            console.log('[Supabase Auth] Đổi session thành công:', data.session.user.email);
+            setSession(data.session);
+            setUser(data.session.user);
+            syncLocalDataToCloud(data.session.user.id);
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
+
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          setSession(existingSession);
+          setUser(existingSession.user);
+          syncLocalDataToCloud(existingSession.user.id);
+        }
+      } catch (err) {
+        console.error('[Supabase Auth] Lỗi trong quá trình khởi tạo:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Lắng nghe thay đổi trạng thái đăng nhập
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[Supabase Auth State]:', event, session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
