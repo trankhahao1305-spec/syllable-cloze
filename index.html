@@ -3387,60 +3387,41 @@ Danh sách từ cần xử lý:
           }
         });
 
-        // 1. Kiểm tra tham số URL từ Google OAuth Callback (?code= hoặc #access_token=)
-        const searchParams = new URLSearchParams(window.location.search);
-        const hashParams = new URLSearchParams(
-          window.location.hash.startsWith('#')
-            ? window.location.hash.substring(1)
-            : window.location.hash
-        );
-
-        const code = searchParams.get('code') || hashParams.get('code');
-        const error = searchParams.get('error') || hashParams.get('error');
-        const errorDesc = searchParams.get('error_description') || hashParams.get('error_description');
-
-        if (error) {
-          console.error('[Supabase OAuth Error]:', error, errorDesc);
-          alert('Lỗi đăng nhập Google: ' + (errorDesc || error));
-        }
-
-        if (code) {
-          console.log('[Supabase Auth] Phát hiện auth code từ Google, đang đổi session...');
-          showToast('Đang kết nối tài khoản Google...');
-          const { data, error: exchangeError } = await supabaseClient.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            console.error('[Supabase Auth] Lỗi exchangeCodeForSession:', exchangeError);
-            alert('Không thể hoàn tất đăng nhập Google: ' + exchangeError.message);
-          } else if (data && data.session) {
-            console.log('[Supabase Auth] Đăng nhập Google thành công:', data.session.user);
-            currentUser = data.session.user;
+        // 1. Lắng nghe thay đổi trạng thái đăng nhập (được kích hoạt tự động bởi detectSessionInUrl)
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          console.log('[Supabase Auth Event]:', event, session?.user?.email);
+          if (session && session.user) {
+            currentUser = session.user;
             updateAuthUI(currentUser);
             syncLocalDataToCloud(currentUser.id);
             try {
               history.replaceState(null, '', window.location.pathname);
             } catch (e) {}
-            showToast('Đăng nhập Google thành công!');
-            return;
-          }
-        }
-
-        // 2. Lấy session hiện tại đã lưu trong localStorage
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        currentUser = session ? session.user : null;
-        updateAuthUI(currentUser);
-        if (currentUser) {
-          syncLocalDataToCloud(currentUser.id);
-        }
-
-        // 3. Lắng nghe thay đổi trạng thái đăng nhập
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-          console.log('[Supabase Auth Event]:', event, session?.user?.email);
-          currentUser = session ? session.user : null;
-          updateAuthUI(currentUser);
-          if (currentUser) {
-            syncLocalDataToCloud(currentUser.id);
+            showToast('Đăng nhập thành công! Chào mừng ' + (currentUser.user_metadata?.full_name || ''));
+          } else if (event === 'SIGNED_OUT') {
+            currentUser = null;
+            updateAuthUI(null);
           }
         });
+
+        // 2. Kiểm tra session hiện có từ trước trong localStorage
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (sessionData && sessionData.session) {
+          currentUser = sessionData.session.user;
+          updateAuthUI(currentUser);
+          syncLocalDataToCloud(currentUser.id);
+          try {
+            history.replaceState(null, '', window.location.pathname);
+          } catch (e) {}
+        } else {
+          // Xóa các tham số code trên URL nếu có để thanh địa chỉ luôn sạch
+          const searchParams = new URLSearchParams(window.location.search);
+          if (searchParams.get('code') || searchParams.get('error')) {
+            try {
+              history.replaceState(null, '', window.location.pathname);
+            } catch (e) {}
+          }
+        }
       } catch (err) {
         console.error('[Supabase] Lỗi khởi tạo client:', err);
       }
