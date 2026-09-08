@@ -150,7 +150,7 @@ export const StudyScreen: React.FC<StudyScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col max-w-md w-full mx-auto px-3 py-2 select-none h-[calc(100vh-62px)]">
+    <div className="flex-1 flex flex-col max-w-md w-full mx-auto px-3 py-2 select-none min-h-0 h-[calc(100dvh-62px)] max-h-[calc(100dvh-62px)] overflow-hidden">
       {/* VÙNG TRÊN - Thẻ Đục Lỗ 2 Mặt Thông Minh (Tap-to-Flip) */}
       <div className="mb-2.5">
         {/* Thông tin thư mục nếu đang học riêng theo thư mục */}
